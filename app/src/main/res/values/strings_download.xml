@@ -1,0 +1,11 @@
+<resources>
+<string name="download_start">Download (demo)</string>
+<string name="download_cancel">Cancel download</string>
+<string name="download_channel">Simulated downloads</string>
+<string name="download_progress">Simulating download… %1$d%%</string>
+<string name="download_queued">Waiting to start…</string>
+<string name="download_complete">Simulation complete — no file created.</string>
+<string name="download_cancelled">Download cancelled.</string>
+<string name="download_failed">Simulation failed. Tap Download to retry.</string>
+<string name="download_demo">Demo only • No file is downloaded</string>
+</resources>

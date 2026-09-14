@@ -1,0 +1,30 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="64dp" android:gravity="center_vertical" android:paddingEnd="12dp">
+        <androidx.appcompat.widget.AppCompatImageButton android:id="@+id/back" android:layout_width="48dp" android:layout_height="48dp"
+            android:padding="12dp" app:srcCompat="@drawable/back_outline" app:tint="?attr/colorOnSurface"
+            android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/detail_back" />
+        <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="48dp"
+            android:gravity="center_vertical" android:background="@drawable/search_field_background">
+            <androidx.appcompat.widget.AppCompatImageView android:layout_width="24dp" android:layout_height="24dp" android:layout_marginStart="16dp"
+                app:srcCompat="@drawable/search_outline" app:tint="?attr/colorOnSurface" android:importantForAccessibility="no" />
+            <androidx.appcompat.widget.AppCompatEditText android:id="@+id/query" android:layout_width="0dp" android:layout_weight="1"
+                android:layout_height="match_parent" android:background="@null" android:paddingHorizontal="12dp"
+                android:hint="@string/search_hint" android:inputType="text" android:maxLines="1" android:singleLine="true"
+                android:imeOptions="actionSearch" android:textSize="16sp" />
+            <androidx.appcompat.widget.AppCompatImageButton android:id="@+id/clear" android:layout_width="48dp" android:layout_height="48dp"
+                android:padding="14dp" app:srcCompat="@drawable/close_outline" app:tint="?attr/colorOnSurface"
+                android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/search_clear" />
+        </LinearLayout>
+    </LinearLayout>
+    <TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:padding="24dp" android:gravity="center" android:textAppearance="?attr/textAppearanceBodyLarge" android:accessibilityLiveRegion="polite" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/retry" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal" android:text="@string/home_retry" android:visibility="gone" />
+    <com.truongngo.moviedb.presenter.common.ShimmerView android:id="@+id/loading" android:layout_width="match_parent"
+        android:layout_height="280dp" android:tag="banner" android:visibility="gone" />
+    <androidx.recyclerview.widget.RecyclerView android:id="@+id/results" android:layout_width="match_parent"
+        android:layout_height="0dp" android:layout_weight="1" />
+    <com.truongngo.moviedb.presenter.common.ShimmerView android:id="@+id/moreLoading" android:layout_width="match_parent"
+        android:layout_height="24dp" android:tag="compact" android:visibility="gone" />
+</LinearLayout>

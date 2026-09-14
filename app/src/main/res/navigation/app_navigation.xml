@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/app_navigation"
+    app:startDestination="@id/login">
+    <fragment android:id="@+id/login" android:name="com.truongngo.moviedb.presenter.login.LoginFragment" android:label="Login" />
+    <fragment android:id="@+id/signup" android:name="com.truongngo.moviedb.presenter.signup.SignupFragment" android:label="Sign Up" />
+    <fragment android:id="@+id/main_screen" android:name="com.truongngo.moviedb.presenter.main.MainFragment" android:label="Main" />
+        <fragment android:id="@+id/detail"
+            android:name="com.truongngo.moviedb.presenter.detail.DetailFragment"
+            android:label="@string/detail_title">
+            <argument android:name="movieId" app:argType="integer" />
+        </fragment>
+    <fragment android:id="@+id/search" android:name="com.truongngo.moviedb.presenter.search.SearchFragment" android:label="@string/search_hint" />
+</navigation>

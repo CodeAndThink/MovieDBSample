@@ -1,0 +1,5 @@
+- `[ ]` Add `@Inject` to `AuthRepositoryImpl.kt`
+- `[ ]` Create `LoginState.kt` and `LoginEffect.kt`
+- `[ ]` Implement logic in `LoginViewModel.kt`
+- `[ ]` Implement View Binding and observers in `LoginFragment.kt`
+- `[ ]` Verify build

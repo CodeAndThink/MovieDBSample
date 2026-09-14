@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
+    <androidx.appcompat.widget.AppCompatImageButton android:id="@+id/back"
+        android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="12dp"
+        android:padding="12dp" android:background="?attr/selectableItemBackgroundBorderless"
+        app:srcCompat="@drawable/back_outline" app:tint="?attr/colorOnSurface"
+        android:contentDescription="@string/detail_back" />
+    <com.truongngo.moviedb.presenter.common.ShimmerView android:id="@+id/loading"
+        android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+        android:tag="detail" android:visibility="gone" />
+    <TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:padding="24dp" android:gravity="center" android:accessibilityLiveRegion="polite" android:visibility="gone" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/retry"
+        android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_horizontal"
+        android:text="@string/home_retry" android:visibility="gone" />
+    <androidx.core.widget.NestedScrollView android:id="@+id/content"
+        android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:visibility="gone">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+            android:paddingBottom="24dp">
+            <ImageView android:id="@+id/backdrop" android:layout_width="match_parent" android:layout_height="240dp"
+                android:scaleType="centerCrop" android:importantForAccessibility="no" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:padding="20dp">
+                <ImageView android:id="@+id/poster" android:layout_width="100dp" android:layout_height="150dp"
+                    android:scaleType="centerCrop" android:importantForAccessibility="no" />
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                    android:orientation="vertical" android:layout_marginStart="16dp">
+                    <TextView android:id="@+id/title" android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceHeadlineMedium" android:textStyle="bold" />
+                    <TextView android:id="@+id/originalTitle" android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp" android:textAppearance="?attr/textAppearanceBodyMedium" />
+                    <TextView android:id="@+id/metadata" android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp" android:textAppearance="?attr/textAppearanceBodyMedium" />
+                    <TextView android:id="@+id/runtime" android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp" android:textAppearance="?attr/textAppearanceBodyMedium" />
+                </LinearLayout>
+            </LinearLayout>
+            <com.google.android.material.button.MaterialButton android:id="@+id/download"
+                android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="20dp"
+                android:text="@string/download_start" />
+            <ProgressBar android:id="@+id/downloadProgress" style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent" android:layout_height="8dp" android:layout_marginHorizontal="20dp"
+                android:max="100" android:visibility="gone" />
+            <TextView android:id="@+id/downloadStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp" android:layout_marginBottom="16dp" android:text="@string/download_demo" />
+            <TextView android:id="@+id/genres" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp" android:textAppearance="?attr/textAppearanceLabelLarge" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="24dp" android:text="@string/detail_overview" android:textAppearance="?attr/textAppearanceTitleLarge" android:textStyle="bold" />
+            <TextView android:id="@+id/overview" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp" android:layout_marginTop="12dp" android:lineSpacingExtra="4dp"
+                android:textAppearance="?attr/textAppearanceBodyLarge" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</LinearLayout>

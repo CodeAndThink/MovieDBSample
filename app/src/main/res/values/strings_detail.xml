@@ -1,0 +1,10 @@
+<resources>
+    <string name="detail_title">Movie details</string>
+    <string name="detail_back">Back</string>
+    <string name="detail_overview">Overview</string>
+    <string name="detail_metadata">★ %1$.1f/10 (%2$d votes)\nRelease: %3$s</string>
+    <string name="detail_runtime">%1$d minutes</string>
+    <string name="detail_unknown">Unknown</string>
+    <string name="detail_no_overview">No overview available.</string>
+    <string name="detail_invalid_movie">This movie is unavailable.</string>
+</resources>

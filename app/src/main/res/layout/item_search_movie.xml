@@ -1,0 +1,17 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+    android:paddingBottom="24dp" android:background="?attr/selectableItemBackground" android:focusable="true">
+    <androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent" android:layout_height="wrap_content">
+        <ImageView android:id="@+id/thumbnail" android:layout_width="0dp" android:layout_height="0dp" android:scaleType="centerCrop"
+            app:layout_constraintDimensionRatio="16:9" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" app:layout_constraintBottom_toBottomOf="parent" android:importantForAccessibility="no" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+    <TextView android:id="@+id/title" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp" android:layout_marginTop="12dp" android:maxLines="2" android:ellipsize="end"
+        android:textAppearance="?attr/textAppearanceTitleMedium" android:textStyle="bold" />
+    <TextView android:id="@+id/metadata" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp" android:layout_marginTop="4dp" android:textAppearance="?attr/textAppearanceBodySmall" />
+    <TextView android:id="@+id/overview" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp" android:layout_marginTop="8dp" android:maxLines="2" android:ellipsize="end"
+        android:textAppearance="?attr/textAppearanceBodyMedium" />
+</LinearLayout>

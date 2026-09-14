@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:orientation="vertical" android:layout_marginTop="24dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:gravity="center_vertical" android:paddingHorizontal="20dp" android:orientation="horizontal">
+        <TextView android:id="@+id/title" android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:textAppearance="?attr/textAppearanceTitleLarge" android:textStyle="bold" />
+        <com.truongngo.moviedb.presenter.common.ShimmerView android:id="@+id/loading" android:layout_width="64dp" android:layout_height="24dp" android:tag="compact"
+            android:visibility="gone" />
+    </LinearLayout>
+    <com.truongngo.moviedb.presenter.common.ShimmerView android:id="@+id/skeleton"
+        android:layout_width="match_parent" android:layout_height="260dp"
+        android:layout_marginTop="12dp" android:tag="cards" android:visibility="gone" />
+    <androidx.recyclerview.widget.RecyclerView android:id="@+id/movies"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="260dp"
+        android:layout_marginTop="12dp" android:paddingStart="20dp" android:paddingEnd="8dp"
+        android:clipToPadding="false" android:nestedScrollingEnabled="false" android:overScrollMode="never" />
+    <LinearLayout android:id="@+id/footer" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:gravity="center_vertical" android:paddingHorizontal="20dp" android:orientation="horizontal">
+        <TextView android:id="@+id/status" android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:textAppearance="?attr/textAppearanceBodySmall"
+            android:accessibilityLiveRegion="polite" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/action"
+            style="?attr/borderlessButtonStyle" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="@string/home_load_more" />
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,7 @@
+- [x] Cấu trúc lại `main_navigation.xml` với Nested Graphs
+- [x] Cập nhật `AppNavigator.kt` để bật Multiple Backstacks flags
+- [x] Thêm Logging vào `HomeViewModel.kt` để theo dõi vòng đời
+- [x] Cập nhật `MainFragment.kt` để đảm bảo luồng navigation đi qua AppNavigator mới
+- [x] Sửa lỗi nháy UI ở màn hình Settings (Broaden scope & SharingStarted.Eagerly)
+- [x] Áp dụng `hiltNavGraphViewModels` cho `HomeFragment`
+- [x] Kiểm chứng và Verify

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "84150406837",
+    "project_id": "movie-ed464",
+    "storage_bucket": "movie-ed464.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:84150406837:android:ab3dce3a18d2f864eab8fc",
+        "android_client_info": {
+          "package_name": "com.truongngo.moviedb"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoB4bB8Ni1eHzXA3yhYImi5LBYJ2q27IM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

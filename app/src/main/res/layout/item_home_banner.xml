@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:paddingHorizontal="20dp">
+    <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="match_parent"
+        app:cardCornerRadius="20dp" app:cardElevation="0dp" app:strokeWidth="0dp">
+        <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
+            <ImageView android:id="@+id/backdrop" android:layout_width="match_parent" android:layout_height="match_parent"
+                android:scaleType="centerCrop" android:importantForAccessibility="no" />
+            <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="@drawable/home_banner_gradient" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_gravity="bottom"
+                android:orientation="vertical" android:padding="20dp">
+                <TextView android:id="@+id/title" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:maxLines="2" android:ellipsize="end" android:textColor="@android:color/white"
+                    android:textAppearance="?attr/textAppearanceHeadlineSmall" android:textStyle="bold" />
+                <TextView android:id="@+id/metadata" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp" android:textColor="@android:color/white" android:textAppearance="?attr/textAppearanceBodyMedium" />
+            </LinearLayout>
+        </FrameLayout>
+    </com.google.android.material.card.MaterialCardView>
+</FrameLayout>
