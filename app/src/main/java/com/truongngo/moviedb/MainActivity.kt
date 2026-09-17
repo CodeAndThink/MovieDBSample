@@ -16,6 +16,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.graphics.Insets
 import androidx.core.view.isVisible
+import androidx.core.os.LocaleListCompat
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -59,6 +60,12 @@ class MainActivity : AppCompatActivity() {
                 viewModel.uiState.collect { state ->
                     binding.progressLoading.isVisible = state.isLoading
                     applyTheme(state.themeMode)
+                    state.language?.let { language ->
+                        val locales = LocaleListCompat.forLanguageTags(language.tag)
+                        if (AppCompatDelegate.getApplicationLocales() != locales) {
+                            AppCompatDelegate.setApplicationLocales(locales)
+                        }
+                    }
                 }
             }
         }

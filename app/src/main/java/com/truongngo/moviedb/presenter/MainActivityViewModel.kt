@@ -22,7 +22,7 @@ class MainActivityViewModel @Inject constructor(
         _uiState,
         settingsRepository.getSettings()
     ) { state, settings ->
-        state.copy(themeMode = settings.themeMode)
+        state.copy(themeMode = settings.themeMode, language = settings.language)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),

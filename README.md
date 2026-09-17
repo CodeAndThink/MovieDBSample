@@ -13,6 +13,7 @@ Tên dự án trong Gradle là `Practice`, application ID là `com.truongngo.mov
 - Phân trang danh sách phim, kéo để làm mới và thử lại khi gặp lỗi.
 - Tìm kiếm phim và xem thông tin chi tiết.
 - Chọn giao diện sáng, tối hoặc theo hệ thống; lưu lựa chọn bằng DataStore.
+- Chuyển ngôn ngữ Eng/Vi trong Cài đặt; lưu bằng DataStore và áp dụng qua AppCompat. Mặc định là tiếng Anh. Chuỗi giao diện nằm trong `values/strings*.xml` và `values-vi/strings*.xml`; nội dung phim từ TMDB giữ theo dữ liệu API.
 - Điều hướng bằng deep link, ví dụ `moviedb://app/detail/550`.
 - Mô phỏng tải xuống với tiến độ, thông báo và thao tác hủy bằng WorkManager. Tính năng này không tải hay lưu tệp phim thực tế.
 

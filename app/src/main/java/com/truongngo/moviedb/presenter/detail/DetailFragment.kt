@@ -16,8 +16,6 @@ import androidx.fragment.app.activityViewModels
 import com.truongngo.moviedb.presenter.navigation.NavigationViewModel
 import coil.load
 import android.Manifest
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.truongngo.moviedb.presenter.common.PermissionManager
@@ -33,7 +31,7 @@ import kotlinx.coroutines.launch
 class DetailFragment : Fragment() {
     private val downloadViewModel: DownloadViewModel by viewModels()
     private var downloadConfirmation: AlertDialog? = null
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+
     private val downloadPermissions = PermissionManager(
         fragment = this,
         permissions = listOf(RuntimePermission(Manifest.permission.POST_NOTIFICATIONS, minSdk = 33)),

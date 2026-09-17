@@ -10,7 +10,7 @@
         <fragment
             android:id="@+id/home"
             android:name="com.truongngo.moviedb.presenter.home.HomeFragment"
-            android:label="Home" />
+            android:label="@string/nav_home" />
 
     </navigation>
 
@@ -20,7 +20,7 @@
         <fragment
             android:id="@+id/settings"
             android:name="com.truongngo.moviedb.presenter.settings.SettingsFragment"
-            android:label="Settings" />
+            android:label="@string/nav_settings" />
     </navigation>
 
 </navigation>

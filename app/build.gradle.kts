@@ -27,7 +27,7 @@ android {
 
     defaultConfig {
         applicationId = "com.truongngo.moviedb"
-        minSdk = 29
+        minSdk = 36
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"

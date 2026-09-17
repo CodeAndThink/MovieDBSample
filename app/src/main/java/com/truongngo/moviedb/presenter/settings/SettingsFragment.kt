@@ -11,6 +11,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.hilt.navigation.fragment.hiltNavGraphViewModels
+import com.truongngo.moviedb.domain.model.AppLanguage
 import com.truongngo.moviedb.R
 import com.truongngo.moviedb.databinding.FragmentSettingsBinding
 import com.truongngo.moviedb.presenter.enum.ThemeMode
@@ -46,8 +47,20 @@ class SettingsFragment : Fragment() {
                         ThemeMode.LIGHT -> binding.radioLight.isChecked = true
                         ThemeMode.DARK -> binding.radioDark.isChecked = true
                     }
+                    binding.radioGroupLanguage.check(when (settings.language) {
+                        AppLanguage.ENGLISH -> R.id.radioEnglish
+                        AppLanguage.VIETNAMESE -> R.id.radioVietnamese
+                    })
                     isRendering = false
                 }
+            }
+        }
+
+        binding.radioGroupLanguage.setOnCheckedChangeListener { _, checkedId ->
+            if (isRendering) return@setOnCheckedChangeListener
+            when (checkedId) {
+                R.id.radioEnglish -> viewModel.onLanguageChanged(AppLanguage.ENGLISH)
+                R.id.radioVietnamese -> viewModel.onLanguageChanged(AppLanguage.VIETNAMESE)
             }
         }
 

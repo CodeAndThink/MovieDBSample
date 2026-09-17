@@ -3,6 +3,7 @@ package com.truongngo.moviedb.presenter.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.truongngo.moviedb.domain.model.SettingsModel
+import com.truongngo.moviedb.domain.model.AppLanguage
 import com.truongngo.moviedb.domain.repository.SettingsRepository
 import com.truongngo.moviedb.presenter.enum.ThemeMode
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,9 +25,13 @@ class SettingsViewModel @Inject constructor(
             initialValue = SettingsModel(ThemeMode.SYSTEM)
         )
 
+    fun onLanguageChanged(language: AppLanguage) {
+        viewModelScope.launch { settingsRepository.setLanguage(language) }
+    }
+
     fun onThemeModeChanged(themeMode: ThemeMode) {
         viewModelScope.launch {
-            settingsRepository.setSettings(SettingsModel(themeMode))
+            settingsRepository.setThemeMode(themeMode)
         }
     }
 }
