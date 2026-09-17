@@ -14,3 +14,11 @@
 - Unit tests: `./gradlew :app:testDebugUnitTest`; build Kotlin/XML/DI: `./gradlew :app:assembleDebug`; test thiết bị khi cần: `./gradlew :app:connectedDebugAndroidTest`.
 - Chạy kiểm tra phù hợp phạm vi; sửa Markdown chỉ kiểm tra diff. Không khẳng định test đã chạy nếu chưa chạy.
 - Giữ file hướng dẫn ngắn: chỉ rule, invariant, bẫy và test liên quan; cập nhật khi hành vi đổi.
+
+## Workflow
+
+- Đọc rule của màn hình trước khi sửa.
+- Task nhỏ, yêu cầu rõ: sửa và kiểm tra trực tiếp.
+- Feature lớn: làm rõ thiết kế → plan → triển khai → review.
+- Bug: tìm nguyên nhân → test tái hiện phù hợp → sửa → kiểm chứng.
+- Giữ plan/report ngắn; không tạo tài liệu chỉ để đủ quy trình.

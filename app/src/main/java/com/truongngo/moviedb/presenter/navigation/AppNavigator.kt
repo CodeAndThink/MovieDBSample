@@ -30,7 +30,12 @@ class AppNavigator @Inject constructor() {
         when (destination) {
             AppDestination.LOGIN -> backToLogin()
             AppDestination.SIGNUP -> if (controller.currentDestination?.id != R.id.signup) {
-                controller.navigate(R.id.signup, null, navOptions { launchSingleTop = true })
+                controller.navigate(R.id.signup, null, navOptions {
+                    if (controller.currentDestination?.id == R.id.splash) {
+                        popUpTo(R.id.splash) { inclusive = true }
+                    }
+                    launchSingleTop = true
+                })
             }
             AppDestination.SEARCH -> {
                 if (controller.currentDestination?.id == R.id.search) return

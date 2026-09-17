@@ -72,7 +72,8 @@ class MainActivity : AppCompatActivity() {
 
         val host = supportFragmentManager.findFragmentById(R.id.main_container) as NavHostFragment
         navigator.attachRoot(host.navController)
-        navigation.start(intent.takeIf { it.action == Intent.ACTION_VIEW }?.dataString, savedInstanceState != null)
+        navigation.start(intent.takeIf { it.action == Intent.ACTION_VIEW }?.dataString, savedInstanceState != null,
+            onSplash = host.navController.currentDestination?.id == R.id.splash)
         if (savedInstanceState != null && host.navController.currentDestination?.id in setOf(R.id.main_screen, R.id.detail, R.id.search)) {
             navigation.checkRestoredSession()
         }

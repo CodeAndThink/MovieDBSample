@@ -4,8 +4,18 @@ import androidx.lifecycle.SavedStateHandle
 import com.truongngo.moviedb.domain.auth.AuthSession
 import org.junit.Assert.*
 import org.junit.Test
+import org.junit.Before
+import org.junit.After
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.*
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class NavigationViewModelTest {
+    private val dispatcher = StandardTestDispatcher()
+    @Before fun setup() { Dispatchers.setMain(dispatcher) }
+    @After fun teardown() { Dispatchers.resetMain() }
+
     private class Session(var signedIn: Boolean = false) : AuthSession {
         override fun isSignedIn() = signedIn
         override fun signOut() { signedIn = false }
@@ -19,6 +29,7 @@ class NavigationViewModelTest {
         val saved = SavedStateHandle()
         val vm = model(saved)
         vm.start("moviedb://app/settings", false)
+        dispatcher.scheduler.advanceUntilIdle()
         assertEquals("LOGIN", vm.command.value)
         vm.consumed("LOGIN")
         vm.navigate(AppDestination.SIGNUP)
@@ -63,6 +74,7 @@ class NavigationViewModelTest {
     @Test fun invalidColdStartUsesNormalEntryAndRestorationDoesNotReplayIntent() {
         val vm = model()
         vm.start("moviedb://app/unknown", false)
+        dispatcher.scheduler.advanceUntilIdle()
         assertEquals("LOGIN", vm.command.value)
         assertTrue(vm.invalidLink.value)
         vm.consumed("LOGIN")
@@ -128,6 +140,39 @@ class NavigationViewModelTest {
         session.signedIn = true
         val vm = model()
         vm.start(null, false)
+        dispatcher.scheduler.advanceUntilIdle()
         assertEquals("HOME", vm.command.value)
+    }
+    @Test fun splashWaitsAndChecksLatestSessionAndLink() {
+        val vm = model()
+        vm.start(null, false)
+        dispatcher.scheduler.advanceTimeBy(499)
+        assertNull(vm.command.value)
+        vm.handleLink("moviedb://app/detail/42")
+        session.signedIn = true
+        dispatcher.scheduler.advanceTimeBy(1)
+        dispatcher.scheduler.runCurrent()
+        assertEquals("DETAIL:42", vm.command.value)
+    }
+
+    @Test fun restoredSplashResumesSavedLinkWithoutReplayingIntent() {
+        val state = SavedStateHandle(mapOf("startup_destination" to "DETAIL:42"))
+        val vm = model(state)
+        vm.start("moviedb://app/home", true, onSplash = true)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertEquals("LOGIN", vm.command.value)
+        session.signedIn = true
+        vm.authenticated()
+        assertEquals("DETAIL:42", vm.command.value)
+    }
+
+    @Test fun rotationDuringSplashDoesNotRestartDelay() {
+        val vm = model()
+        vm.start(null, false)
+        dispatcher.scheduler.advanceTimeBy(300)
+        vm.start(null, true, onSplash = true)
+        dispatcher.scheduler.advanceTimeBy(200)
+        dispatcher.scheduler.runCurrent()
+        assertEquals("LOGIN", vm.command.value)
     }
 }

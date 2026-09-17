@@ -1,10 +1,14 @@
 package com.truongngo.moviedb.presenter.navigation
 
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.lifecycle.ViewModel
 import com.truongngo.moviedb.domain.auth.AuthSession
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 /** Stores only validated routes and movie IDs, never raw links or credentials, across recreation. */
 @HiltViewModel
@@ -16,10 +20,22 @@ class NavigationViewModel @Inject constructor(
     val command = savedState.getStateFlow<String?>(COMMAND, null)
     val invalidLink = savedState.getStateFlow(INVALID_LINK, false)
 
-    fun start(url: String?, restored: Boolean) {
-        if (restored) return // The original launch Intent must not be replayed after rotation.
-        if (url != null && handleLink(url)) return
-        navigate(if (session.isSignedIn()) AppDestination.HOME else AppDestination.LOGIN)
+    private var starting = false
+
+    fun start(url: String?, restored: Boolean, onSplash: Boolean = false) {
+        if (starting || command.value != null || (restored && !onSplash)) return
+        if (!restored) {
+            savedState[START_TARGET] = url?.let { links.resolve(it)?.encode() }
+            savedState[INVALID_LINK] = url != null && links.resolve(url) == null
+        }
+        starting = true
+        viewModelScope.launch {
+            delay(500.milliseconds)
+            val target = savedState.get<String>(START_TARGET)?.let(AppDestination::decode)
+            savedState[START_TARGET] = null
+            starting = false
+            navigate(target ?: if (session.isSignedIn()) AppDestination.HOME else AppDestination.LOGIN)
+        }
     }
 
     fun handleLink(url: String): Boolean {
@@ -29,7 +45,8 @@ class NavigationViewModel @Inject constructor(
             return false
         }
         savedState[INVALID_LINK] = false
-        navigate(destination)
+        if (starting) savedState[START_TARGET] = destination.encode()
+        else navigate(destination)
         return true
     }
 
@@ -74,6 +91,7 @@ class NavigationViewModel @Inject constructor(
     fun invalidLinkShown() { savedState[INVALID_LINK] = false }
 
     companion object {
+        private const val START_TARGET = "startup_destination"
         private const val COMMAND = "navigation_command"
         private const val PENDING = "pending_destination"
         private const val INVALID_LINK = "invalid_link"

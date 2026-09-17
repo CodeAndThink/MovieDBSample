@@ -2,7 +2,8 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/app_navigation"
-    app:startDestination="@id/login">
+    app:startDestination="@id/splash">
+    <fragment android:id="@+id/splash" android:name="com.truongngo.moviedb.presenter.splash.SplashFragment" android:label="@string/app_name" />
     <fragment android:id="@+id/login" android:name="com.truongngo.moviedb.presenter.login.LoginFragment" android:label="@string/login_title" />
     <fragment android:id="@+id/signup" android:name="com.truongngo.moviedb.presenter.signup.SignupFragment" android:label="@string/signup_title" />
     <fragment android:id="@+id/main_screen" android:name="com.truongngo.moviedb.presenter.main.MainFragment" android:label="@string/app_name" />
