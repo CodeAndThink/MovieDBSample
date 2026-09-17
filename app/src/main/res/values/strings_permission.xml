@@ -1,0 +1,5 @@
+<resources>
+    <string name="permission_cancel">Cancel</string>
+    <string name="permission_retry">Try again</string>
+    <string name="permission_settings">Open Settings</string>
+</resources>

@@ -45,7 +45,8 @@ android {
     buildTypes {
         release {
             optimization {
-                enable = false
+                // AGP 9.3+: optimize code and remove unused resources with R8.
+                enable = true
             }
         }
     }
@@ -56,11 +57,11 @@ android {
 }
 
 dependencies {
-    implementation("androidx.work:work-runtime-ktx:2.10.1")
-    implementation("androidx.recyclerview:recyclerview:1.1.0")
-    implementation("androidx.viewpager2:viewpager2:1.0.0")
-    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
-    implementation("io.coil-kt:coil:2.7.0")
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.recyclerview)
+    implementation(libs.androidx.viewpager2)
+    implementation(libs.androidx.swiperefreshlayout)
+    implementation(libs.coil)
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)
@@ -78,15 +79,15 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
     implementation(libs.kotlinx.coroutines.android)
-    implementation("com.google.dagger:hilt-android:2.57.1")
-    ksp("com.google.dagger:hilt-android-compiler:2.57.1")
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.android.compiler)
 
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging.interceptor)
 
-    implementation("androidx.hilt:hilt-navigation-fragment:1.2.0")
+    implementation(libs.androidx.hilt.nav.fragment)
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)

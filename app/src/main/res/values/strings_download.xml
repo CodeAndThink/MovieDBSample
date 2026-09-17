@@ -8,4 +8,11 @@
 <string name="download_cancelled">Download cancelled.</string>
 <string name="download_failed">Simulation failed. Tap Download to retry.</string>
 <string name="download_demo">Demo only • No file is downloaded</string>
+<string name="download_confirm_title">Allow download?</string>
+<string name="download_confirm_message">Allow this download to start? This demo simulates downloading and does not save a file.</string>
+<string name="download_confirm_allow">Allow</string>
+<string name="download_permission_title">Download notifications</string>
+<string name="download_permission_rationale">Allow notifications to follow download progress. Tap Try again to grant permission.</string>
+<string name="download_permission_denied">Notification permission was not granted. The download has not started. Tap Download to try again.</string>
+<string name="download_permission_blocked">Notification permission is blocked. Open Settings and enable notifications, then return and tap Download again.</string>
 </resources>

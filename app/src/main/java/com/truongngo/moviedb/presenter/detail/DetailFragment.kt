@@ -1,11 +1,6 @@
 package com.truongngo.moviedb.presenter.detail
 
 import android.os.Bundle
-import android.os.Build
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
 import com.truongngo.moviedb.domain.model.DownloadState
 import com.truongngo.moviedb.domain.model.DownloadStatus
 import android.view.LayoutInflater
@@ -20,6 +15,14 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.fragment.app.activityViewModels
 import com.truongngo.moviedb.presenter.navigation.NavigationViewModel
 import coil.load
+import android.Manifest
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.truongngo.moviedb.presenter.common.PermissionManager
+import com.truongngo.moviedb.presenter.common.PermissionMessages
+import com.truongngo.moviedb.presenter.common.RuntimePermission
 import com.truongngo.moviedb.R
 import com.truongngo.moviedb.data.network.utils.NetworkUtils
 import com.truongngo.moviedb.databinding.FragmentDetailBinding
@@ -29,9 +32,18 @@ import kotlinx.coroutines.launch
 @AndroidEntryPoint
 class DetailFragment : Fragment() {
     private val downloadViewModel: DownloadViewModel by viewModels()
-    private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-        startDownload()
-    }
+    private var downloadConfirmation: AlertDialog? = null
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private val downloadPermissions = PermissionManager(
+        fragment = this,
+        permissions = listOf(RuntimePermission(Manifest.permission.POST_NOTIFICATIONS, minSdk = 33)),
+        messages = PermissionMessages(
+            title = R.string.download_permission_title,
+            rationale = R.string.download_permission_rationale,
+            denied = R.string.download_permission_denied,
+            blocked = R.string.download_permission_blocked,
+        ),
+    ) { result -> if (result.allGranted) startDownload() }
     private val navigation: NavigationViewModel by activityViewModels()
     private val viewModel: DetailViewModel by viewModels()
     private var _binding: FragmentDetailBinding? = null
@@ -46,9 +58,7 @@ class DetailFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         binding.download.setOnClickListener {
             if (downloadViewModel.stateFlow.value.isActive) downloadViewModel.onEvent(DownloadEvent.Cancel)
-            else if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-            } else startDownload()
+            else confirmDownload()
         }
         binding.back.setOnClickListener { viewModel.onEvent(DetailEvent.BackClicked) }
         binding.retry.setOnClickListener { viewModel.onEvent(DetailEvent.Retry) }
@@ -65,6 +75,16 @@ class DetailFragment : Fragment() {
                 }
             }
         }
+    }
+
+    private fun confirmDownload() {
+        if (downloadConfirmation?.isShowing == true) return
+        downloadConfirmation = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.download_confirm_title)
+            .setMessage(R.string.download_confirm_message)
+            .setNegativeButton(R.string.permission_cancel, null)
+            .setPositiveButton(R.string.download_confirm_allow) { _, _ -> downloadPermissions.request() }
+            .show()
     }
 
     private fun startDownload() {
@@ -123,6 +143,9 @@ class DetailFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        downloadConfirmation?.dismiss()
+        downloadConfirmation = null
+        downloadPermissions.dismiss()
         _binding = null
         super.onDestroyView()
     }

@@ -127,6 +127,17 @@ Sync Gradle, chọn module `app` và nhấn **Run** trong Android Studio. Hoặc
 
 Lệnh `installDebug` yêu cầu thiết bị hoặc emulator đã kết nối. APK debug được tạo tại `app/build/outputs/apk/debug/app-debug.apk`. Trên Windows, dùng `gradlew.bat` thay cho `./gradlew`.
 
+### 5. Build release tối ưu bằng R8
+
+```bash
+./gradlew :app:assembleRelease
+./gradlew :app:bundleRelease
+```
+
+Release bật `optimization.enable = true` (AGP 9.3), bao gồm tối ưu mã, rút gọn tên và loại bỏ tài nguyên không dùng. Quy tắc riêng tại `app/src/main/keepRules/rules.keep` giữ các model và trường JSON dùng qua reflection của Gson. Khi thêm model API, đặt trong package `data.network.model` hoặc bổ sung quy tắc tương ứng.
+
+APK được tạo tại `app/build/outputs/apk/release/app-release-unsigned.apk`; AAB tại `app/build/outputs/bundle/release/app-release.aab`. Cần cấu hình ký release trước khi phát hành. Lưu `app/build/outputs/mapping/release/mapping.txt` cùng từng bản phát hành để khôi phục stack trace đã bị đổi tên. Kiểm tra đăng nhập, danh sách phim, tìm kiếm, chi tiết và tải xuống trên bản release đã ký trước khi phát hành.
+
 ## Kiểm thử
 
 Chạy unit test:
