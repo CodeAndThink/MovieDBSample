@@ -24,7 +24,8 @@
     <com.truongngo.moviedb.presenter.common.ShimmerView android:id="@+id/loading" android:layout_width="match_parent"
         android:layout_height="280dp" android:tag="banner" android:visibility="gone" />
     <androidx.recyclerview.widget.RecyclerView android:id="@+id/results" android:layout_width="match_parent"
-        android:layout_height="0dp" android:layout_weight="1" />
+        android:layout_height="0dp" android:layout_weight="1"
+        android:padding="20dp" android:clipToPadding="false" />
     <com.truongngo.moviedb.presenter.common.ShimmerView android:id="@+id/moreLoading" android:layout_width="match_parent"
         android:layout_height="24dp" android:tag="compact" android:visibility="gone" />
 </LinearLayout>

@@ -1,5 +1,6 @@
 package com.truongngo.moviedb.presenter.detail
 
+import android.content.Intent
 import android.os.Bundle
 import com.truongngo.moviedb.domain.model.DownloadState
 import com.truongngo.moviedb.domain.model.DownloadStatus
@@ -58,6 +59,7 @@ class DetailFragment : Fragment() {
             if (downloadViewModel.stateFlow.value.isActive) downloadViewModel.onEvent(DownloadEvent.Cancel)
             else confirmDownload()
         }
+        binding.share.setOnClickListener { viewModel.onEvent(DetailEvent.ShareClicked) }
         binding.back.setOnClickListener { viewModel.onEvent(DetailEvent.BackClicked) }
         binding.retry.setOnClickListener { viewModel.onEvent(DetailEvent.Retry) }
         viewLifecycleOwner.lifecycleScope.launch {
@@ -68,6 +70,12 @@ class DetailFragment : Fragment() {
                     viewModel.effectFlow.collect { effect ->
                         when (effect) {
                             DetailEffect.NavigateBack -> navigation.back()
+                            is DetailEffect.ShareMovie -> startActivity(Intent.createChooser(
+                                Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, effect.text)
+                                }, getString(R.string.detail_share),
+                            ))
                         }
                     }
                 }
@@ -107,6 +115,7 @@ class DetailFragment : Fragment() {
     private fun render(state: DetailState): Unit = with(binding) {
         loading.isVisible = state.isLoading
         content.isVisible = state.movie != null
+        share.isVisible = state.movie?.let { it.id > 0 || it.title.isNotBlank() } == true
         status.isVisible = state.error != null
         retry.isVisible = state.error != null && state.error != DetailError.INVALID_MOVIE
         status.setText(when (state.error) {
@@ -144,6 +153,7 @@ class DetailFragment : Fragment() {
         downloadConfirmation?.dismiss()
         downloadConfirmation = null
         downloadPermissions.dismiss()
+        binding.share.setOnClickListener(null)
         _binding = null
         super.onDestroyView()
     }

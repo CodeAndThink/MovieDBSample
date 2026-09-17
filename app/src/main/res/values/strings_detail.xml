@@ -7,4 +7,5 @@
     <string name="detail_unknown">Unknown</string>
     <string name="detail_no_overview">No overview available.</string>
     <string name="detail_invalid_movie">This movie is unavailable.</string>
+    <string name="detail_share">Share movie</string>
 </resources>

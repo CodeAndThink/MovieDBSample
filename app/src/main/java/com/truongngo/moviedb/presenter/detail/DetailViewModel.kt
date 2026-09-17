@@ -30,6 +30,11 @@ class DetailViewModel @Inject constructor(
 
     fun onEvent(event: DetailEvent) {
         when (event) {
+            DetailEvent.ShareClicked -> {
+                val movie = _stateFlow.value.movie ?: return
+                val text = if (movie.id > 0) "https://www.themoviedb.org/movie/${movie.id}" else movie.title
+                if (text.isNotBlank()) effects.trySend(DetailEffect.ShareMovie(text))
+            }
             DetailEvent.Retry -> loadMovie()
             DetailEvent.BackClicked -> effects.trySend(DetailEffect.NavigateBack)
         }

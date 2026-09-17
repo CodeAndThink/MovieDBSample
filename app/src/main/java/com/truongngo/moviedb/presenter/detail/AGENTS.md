@@ -6,4 +6,5 @@
 - Tải xuống chỉ mô phỏng WorkManager, không lưu phim; unique work theo movie ID + KEEP.
 - UI: xác nhận → PermissionManager → chỉ Start khi allGranted (POST_NOTIFICATIONS từ API 33). Active thì bấm để Cancel.
 - Rời màn hình không hủy worker; destroy view phải dismiss dialog/quyền.
+- Share: FAB chỉ hiện khi có nội dung; ShareClicked → ShareMovie → Android chooser, dùng URL TMDB theo ID hợp lệ hoặc tên phim khi thiếu ID.
 - Test: DetailViewModelTest, DownloadViewModelTest, DownloadInstrumentedTest; quyền, start trùng, cancel, recreate.

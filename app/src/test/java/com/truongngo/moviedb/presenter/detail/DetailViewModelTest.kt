@@ -57,6 +57,32 @@ class DetailViewModelTest {
         assertEquals(DetailEffect.NavigateBack, vm.effectFlow.first())
     }
 
+    @Test fun shareUsesTmdbMovieLink() = runTest(dispatcher) {
+        val vm = DetailViewModel(api, SavedStateHandle(mapOf("movieId" to 42)))
+        runCurrent()
+        vm.onEvent(DetailEvent.ShareClicked)
+        assertEquals(DetailEffect.ShareMovie("https://www.themoviedb.org/movie/42"), vm.effectFlow.first())
+    }
+
+    @Test fun shareFallsBackToTitleWhenResponseHasNoValidId() = runTest(dispatcher) {
+        api.details = { page(1, listOf(0)).results.first().copy(title = "Tên phim") }
+        val vm = DetailViewModel(api, SavedStateHandle(mapOf("movieId" to 42)))
+        runCurrent()
+        vm.onEvent(DetailEvent.ShareClicked)
+        assertEquals(DetailEffect.ShareMovie("Tên phim"), vm.effectFlow.first())
+    }
+
+    @Test fun shareWhileLoadingDoesNotQueueAnEffect() = runTest(dispatcher) {
+        val pending = CompletableDeferred<Movie>()
+        api.details = { pending.await() }
+        val vm = DetailViewModel(api, SavedStateHandle(mapOf("movieId" to 42)))
+        vm.onEvent(DetailEvent.ShareClicked)
+        pending.complete(page(1, listOf(42)).results.first())
+        runCurrent()
+        vm.onEvent(DetailEvent.BackClicked)
+        assertEquals(DetailEffect.NavigateBack, vm.effectFlow.first())
+    }
+
     private class FakeApi : ApiClients {
         val popularCalls = mutableListOf<Int>()
         var popular: suspend (Int) -> MoviePage = { page(it, listOf(1, 2)) }

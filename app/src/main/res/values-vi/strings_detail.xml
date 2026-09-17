@@ -7,4 +7,5 @@
     <string name="detail_unknown">Chưa rõ</string>
     <string name="detail_no_overview">Chưa có nội dung giới thiệu.</string>
     <string name="detail_invalid_movie">Phim này không khả dụng.</string>
+    <string name="detail_share">Chia sẻ phim</string>
 </resources>
