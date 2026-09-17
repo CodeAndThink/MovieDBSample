@@ -157,6 +157,8 @@ Các bộ kiểm thử hiện có bao phủ những phần như ViewModel, repos
 
 ## Tài liệu chi tiết
 
+- [Hướng dẫn ngắn cho AI](AGENTS.md) — rule chung; rule từng màn hình nằm trong `presenter/<feature>/AGENTS.md`.
+
 - [Trang chủ và danh sách phim](docs/home.md)
 - [Tầng mạng và TMDB API](docs/network.md)
 - [Đăng nhập và đăng ký](docs/authentication.md)

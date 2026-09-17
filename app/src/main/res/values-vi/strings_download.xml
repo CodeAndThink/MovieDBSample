@@ -1,0 +1,18 @@
+<resources>
+    <string name="download_start">Tải xuống (mô phỏng)</string>
+    <string name="download_cancel">Hủy tải xuống</string>
+    <string name="download_channel">Tải xuống mô phỏng</string>
+    <string name="download_progress">Đang mô phỏng tải xuống… %1$d%%</string>
+    <string name="download_queued">Đang chờ bắt đầu…</string>
+    <string name="download_complete">Mô phỏng hoàn tất — không tạo tệp.</string>
+    <string name="download_cancelled">Đã hủy tải xuống.</string>
+    <string name="download_failed">Mô phỏng thất bại. Nhấn Tải xuống để thử lại.</string>
+    <string name="download_demo">Chỉ mô phỏng • Không tải tệp xuống</string>
+    <string name="download_confirm_title">Cho phép tải xuống?</string>
+    <string name="download_confirm_message">Cho phép bắt đầu tải xuống? Bản demo này chỉ mô phỏng tải xuống và không lưu tệp.</string>
+    <string name="download_confirm_allow">Cho phép</string>
+    <string name="download_permission_title">Thông báo tải xuống</string>
+    <string name="download_permission_rationale">Cho phép thông báo để theo dõi tiến độ tải xuống. Nhấn Thử lại để cấp quyền.</string>
+    <string name="download_permission_denied">Chưa được cấp quyền thông báo. Quá trình tải xuống chưa bắt đầu. Nhấn Tải xuống để thử lại.</string>
+    <string name="download_permission_blocked">Quyền thông báo đã bị chặn. Mở Cài đặt và bật thông báo, sau đó quay lại và nhấn Tải xuống.</string>
+</resources>

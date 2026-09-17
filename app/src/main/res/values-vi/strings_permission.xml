@@ -1,0 +1,5 @@
+<resources>
+    <string name="permission_cancel">Hủy</string>
+    <string name="permission_retry">Thử lại</string>
+    <string name="permission_settings">Mở cài đặt</string>
+</resources>

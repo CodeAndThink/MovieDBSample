@@ -1,0 +1,10 @@
+<resources>
+    <string name="detail_title">Chi tiết phim</string>
+    <string name="detail_back">Quay lại</string>
+    <string name="detail_overview">Nội dung</string>
+    <string name="detail_metadata">★ %1$.1f/10 (%2$d lượt đánh giá)\nKhởi chiếu: %3$s</string>
+    <string name="detail_runtime">%1$d phút</string>
+    <string name="detail_unknown">Chưa rõ</string>
+    <string name="detail_no_overview">Chưa có nội dung giới thiệu.</string>
+    <string name="detail_invalid_movie">Phim này không khả dụng.</string>
+</resources>
