@@ -1,0 +1,156 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "195ca87c9acd74dbf34f4bbd362f657a",
+    "entities": [
+      {
+        "tableName": "home_pages",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`totalPages` INTEGER NOT NULL, `totalResults` INTEGER NOT NULL, `fetchedAt` INTEGER NOT NULL, `feed` TEXT NOT NULL, `language` TEXT NOT NULL, `region` TEXT NOT NULL, PRIMARY KEY(`feed`, `language`, `region`))",
+        "fields": [
+          {
+            "fieldPath": "totalPages",
+            "columnName": "totalPages",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalResults",
+            "columnName": "totalResults",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fetchedAt",
+            "columnName": "fetchedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "key.feed",
+            "columnName": "feed",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "key.language",
+            "columnName": "language",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "key.region",
+            "columnName": "region",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "feed",
+            "language",
+            "region"
+          ]
+        }
+      },
+      {
+        "tableName": "home_movies",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`position` INTEGER NOT NULL, `movieId` INTEGER NOT NULL, `title` TEXT NOT NULL, `overview` TEXT, `originalTitle` TEXT, `posterPath` TEXT, `backdropPath` TEXT, `releaseDate` TEXT, `voteAverage` REAL NOT NULL, `voteCount` INTEGER NOT NULL, `genreIds` TEXT, `feed` TEXT NOT NULL, `language` TEXT NOT NULL, `region` TEXT NOT NULL, PRIMARY KEY(`feed`, `language`, `region`, `position`))",
+        "fields": [
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "movieId",
+            "columnName": "movieId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "overview",
+            "columnName": "overview",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "originalTitle",
+            "columnName": "originalTitle",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "posterPath",
+            "columnName": "posterPath",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "backdropPath",
+            "columnName": "backdropPath",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "releaseDate",
+            "columnName": "releaseDate",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "voteAverage",
+            "columnName": "voteAverage",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "voteCount",
+            "columnName": "voteCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "genreIds",
+            "columnName": "genreIds",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "key.feed",
+            "columnName": "feed",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "key.language",
+            "columnName": "language",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "key.region",
+            "columnName": "region",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "feed",
+            "language",
+            "region",
+            "position"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '195ca87c9acd74dbf34f4bbd362f657a')"
+    ]
+  }
+}
