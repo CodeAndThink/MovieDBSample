@@ -2,8 +2,11 @@ package com.truongngo.moviedb.presenter.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.truongngo.moviedb.data.local.model.HomeCacheKey
+import com.truongngo.moviedb.data.local.home.HomeCache
 import com.truongngo.moviedb.data.network.ApiClients
 import com.truongngo.moviedb.data.network.NetworkException
+import com.truongngo.moviedb.data.network.model.MoviePage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
@@ -18,7 +21,7 @@ import java.io.IOException
 import javax.inject.Inject
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(private val api: ApiClients) : ViewModel() {
+class HomeViewModel @Inject constructor(private val api: ApiClients, private val cache: HomeCache) : ViewModel() {
     private val _stateFlow = MutableStateFlow(HomeState())
     val stateFlow = _stateFlow.asStateFlow()
     private val effects = Channel<HomeEffect>(Channel.BUFFERED)
@@ -29,7 +32,7 @@ class HomeViewModel @Inject constructor(private val api: ApiClients) : ViewModel
     private var bannerJob: Job? = null
 
     init {
-        refresh()
+        refresh(useCache = true)
     }
 
     fun onEvent(event: HomeEvent) {
@@ -43,7 +46,7 @@ class HomeViewModel @Inject constructor(private val api: ApiClients) : ViewModel
         }
     }
 
-    private fun refresh() {
+    private fun refresh(useCache: Boolean = false) {
         if (_stateFlow.value.isRefreshing) return
         val currentGeneration = ++generation
         refreshJob?.cancel()
@@ -56,9 +59,9 @@ class HomeViewModel @Inject constructor(private val api: ApiClients) : ViewModel
         }
         refreshJob = viewModelScope.launch {
             coroutineScope {
-                launch { fetchNowPlaying(currentGeneration) }
+                launch { fetchNowPlaying(currentGeneration, useCache) }
                 MovieSection.entries.forEach { section ->
-                    launch { fetchSection(section, page = 1, currentGeneration) }
+                    launch { fetchSection(section, page = 1, currentGeneration, useCache) }
                 }
             }
             if (generation == currentGeneration) {
@@ -74,12 +77,26 @@ class HomeViewModel @Inject constructor(private val api: ApiClients) : ViewModel
         bannerJob = viewModelScope.launch { fetchNowPlaying(currentGeneration) }
     }
 
-    private suspend fun fetchNowPlaying(currentGeneration: Int) {
+    private suspend fun fetchNowPlaying(currentGeneration: Int, useCache: Boolean = false) {
         try {
-            val movies = api.getNowPlayingMovies().results.distinctBy { it.id }.take(10)
+            val key = HomeCacheKey("NOW_PLAYING")
+            if (useCache) {
+                val cached = cacheOrNull { cache.read(key) }
+                if (generation != currentGeneration) return
+                if (cached != null) {
+                    val fresh = cached.isFresh(System.currentTimeMillis())
+                    _stateFlow.update { it.copy(nowPlaying = cached.page.results.distinctBy { movie -> movie.id }.take(10),
+                        isNowPlayingLoading = !fresh) }
+                    if (fresh) return
+                }
+            }
+            val response = api.getNowPlayingMovies()
+            if (generation != currentGeneration) return
+            val movies = response.results.distinctBy { it.id }.take(10)
             if (generation == currentGeneration) _stateFlow.update {
                 it.copy(nowPlaying = movies, isNowPlayingLoading = false, nowPlayingError = null)
             }
+            cacheOrNull { cache.write(key, response) }
         } catch (exception: CancellationException) {
             throw exception
         } catch (exception: Exception) {
@@ -101,23 +118,26 @@ class HomeViewModel @Inject constructor(private val api: ApiClients) : ViewModel
         }
     }
 
-    private suspend fun fetchSection(section: MovieSection, page: Int, currentGeneration: Int) {
+    private suspend fun fetchSection(section: MovieSection, page: Int, currentGeneration: Int, useCache: Boolean = false) {
         try {
+            val key = HomeCacheKey(section.name)
+            if (useCache && page == 1) {
+                val cached = cacheOrNull { cache.read(key) }
+                if (generation != currentGeneration) return
+                if (cached != null) {
+                    val fresh = cached.isFresh(System.currentTimeMillis())
+                    applyPage(section, cached.page, loading = !fresh)
+                    if (fresh) return
+                }
+            }
             val response = when (section) {
                 MovieSection.POPULAR -> api.getPopularMovies(page)
                 MovieSection.TOP_RATED -> api.getTopRatedMovies(page)
                 MovieSection.UPCOMING -> api.getUpcomingMovies(page)
             }
-            if (generation == currentGeneration) updateSection(section) { previous ->
-                previous.copy(
-                    movies = ((if (page == 1) emptyList() else previous.movies) + response.results).distinctBy { it.id },
-                    page = page,
-                    canLoadMore = response.results.isNotEmpty() && page < minOf(response.totalPages, 500),
-                    isLoading = false,
-                    error = null,
-                    retryPage = null,
-                )
-            }
+            if (generation != currentGeneration) return
+            applyPage(section, response)
+            if (page == 1) cacheOrNull { cache.write(key, response) }
         } catch (exception: CancellationException) {
             throw exception
         } catch (exception: Exception) {
@@ -126,6 +146,28 @@ class HomeViewModel @Inject constructor(private val api: ApiClients) : ViewModel
                 it.copy(isLoading = false, error = exception.toHomeError(), retryPage = page)
             }
         }
+    }
+
+    private fun applyPage(section: MovieSection, response: MoviePage, loading: Boolean = false) {
+        updateSection(section) { previous ->
+            previous.copy(
+                movies = ((if (response.page == 1) emptyList() else previous.movies) + response.results).distinctBy { it.id },
+                page = response.page,
+                canLoadMore = response.results.isNotEmpty() && response.page < minOf(response.totalPages, 500),
+                isLoading = loading,
+                error = null,
+                retryPage = null,
+            )
+        }
+    }
+
+    // Cache failures must not turn successful network content into an error. Cancellation still propagates.
+    private suspend fun <T> cacheOrNull(block: suspend () -> T): T? = try {
+        block()
+    } catch (exception: CancellationException) {
+        throw exception
+    } catch (_: Exception) {
+        null
     }
 
     private fun updateSection(section: MovieSection, transform: (MovieSectionState) -> MovieSectionState) {

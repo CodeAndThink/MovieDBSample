@@ -15,6 +15,12 @@ import javax.inject.Singleton
 abstract class AuthModule {
     @Binds
     @Singleton
+    abstract fun bindRememberedEmailStore(
+        impl: com.truongngo.moviedb.data.local.EncryptedRememberedEmailStore
+    ): com.truongngo.moviedb.domain.auth.RememberedEmailStore
+
+    @Binds
+    @Singleton
     abstract fun bindAuthSession(impl: com.truongngo.moviedb.data.auth.FirebaseAuthSession): com.truongngo.moviedb.domain.auth.AuthSession
 
     @Binds

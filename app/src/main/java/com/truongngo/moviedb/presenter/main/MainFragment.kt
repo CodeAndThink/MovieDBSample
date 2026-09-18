@@ -6,20 +6,27 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.core.view.isVisible
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import com.truongngo.moviedb.R
 import com.truongngo.moviedb.databinding.FragmentMainBinding
+import com.truongngo.moviedb.presenter.MainActivityViewModel
 import com.truongngo.moviedb.presenter.navigation.AppDestination
 import com.truongngo.moviedb.presenter.navigation.AppNavigator
 import com.truongngo.moviedb.presenter.navigation.NavigationViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainFragment : Fragment() {
     @Inject lateinit var navigator: AppNavigator
     private val navigation: NavigationViewModel by activityViewModels()
+    private val activityViewModel: MainActivityViewModel by activityViewModels()
     private var _binding: FragmentMainBinding? = null
     private val binding get() = _binding!!
     private var controller: NavController? = null
@@ -38,6 +45,14 @@ class MainFragment : Fragment() {
         controller = host.navController
         host.navController.addOnDestinationChangedListener(destinationListener)
         navigator.attachMain(host.navController)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                activityViewModel.isConnected.collect { connected ->
+                    binding.disconnectMessage.isVisible = connected == false
+                }
+            }
+        }
 
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             val destination = when (item.itemId) {
@@ -60,6 +75,7 @@ class MainFragment : Fragment() {
             navigator.detachMain(it)
         }
         controller = null
+        binding.bottomNavigation.setOnItemSelectedListener(null)
         _binding = null
         super.onDestroyView()
     }

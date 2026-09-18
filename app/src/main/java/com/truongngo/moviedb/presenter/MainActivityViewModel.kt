@@ -2,6 +2,7 @@ package com.truongngo.moviedb.presenter
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.truongngo.moviedb.data.network.ConnectivityMonitor
 import com.truongngo.moviedb.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,8 +15,15 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainActivityViewModel @Inject constructor(
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    connectivityMonitor: ConnectivityMonitor
 ) : ViewModel() {
+    val isConnected: StateFlow<Boolean?> = connectivityMonitor.isConnected.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 0, replayExpirationMillis = 0),
+        initialValue = null
+    )
+
     private val _uiState = MutableStateFlow(MainActivityState())
     
     val uiState: StateFlow<MainActivityState> = combine(

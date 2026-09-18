@@ -1,6 +1,7 @@
 # Main — AI rules
 
 - MainFragment chỉ host Home/Settings + bottom navigation; không có ViewModel riêng.
+- Trạng thái Internet lấy từ MainActivityViewModel; dòng mất kết nối dưới bottom navigation chỉ hiện khi offline. Collect theo view lifecycle; ConnectivityMonitor tự hủy callback khi ngừng collect.
 - MainActivity giữ root graph Login/Signup/Main/Search/Detail. Search/Detail ở ngoài bottom navigation.
 - Chuyển tab qua NavigationViewModel/AppNavigator; Settings Back về Home.
 - Attach child NavController khi tạo view; remove listener + detach khi destroy view.

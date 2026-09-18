@@ -1,9 +1,10 @@
 <resources>
+    <string name="network_disconnected">Mất kết nối</string>
     <string name="app_name">My Movie</string>
     <string name="login_title">Đăng nhập</string>
     <string name="login_email">Email</string>
     <string name="login_password">Mật khẩu</string>
-    <string name="login_remember_me">Ghi nhớ đăng nhập</string>
+    <string name="login_remember_me">Ghi nhớ email</string>
     <string name="login_no_account">Bạn chưa có tài khoản?</string>
     <string name="login_signup">Đăng ký</string>
     <string name="login_invalid_email">Nhập địa chỉ email hợp lệ</string>
