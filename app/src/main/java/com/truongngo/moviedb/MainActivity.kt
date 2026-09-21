@@ -7,6 +7,7 @@ import androidx.navigation.fragment.NavHostFragment
 import com.truongngo.moviedb.presenter.navigation.NavigationViewModel
 import com.truongngo.moviedb.presenter.navigation.AppNavigator
 import com.truongngo.moviedb.presenter.navigation.AppDestination
+import com.truongngo.moviedb.presenter.notification.PushNotificationParser
 import javax.inject.Inject
 import kotlinx.coroutines.flow.combine
 import androidx.activity.enableEdgeToEdge
@@ -34,6 +35,7 @@ class MainActivity : AppCompatActivity() {
 
     private val viewModel: MainActivityViewModel by viewModels()
     private val navigation: NavigationViewModel by viewModels()
+    @Inject lateinit var pushParser: PushNotificationParser
     @Inject lateinit var navigator: AppNavigator
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -72,8 +74,9 @@ class MainActivity : AppCompatActivity() {
 
         val host = supportFragmentManager.findFragmentById(R.id.main_container) as NavHostFragment
         navigator.attachRoot(host.navController)
-        navigation.start(intent.takeIf { it.action == Intent.ACTION_VIEW }?.dataString, savedInstanceState != null,
-            onSplash = host.navController.currentDestination?.id == R.id.splash)
+        val onSplash = host.navController.currentDestination?.id == R.id.splash
+        navigation.start(incomingLink(intent), savedInstanceState != null,
+            onSplash = onSplash, waitForNotificationPermission = onSplash)
         if (savedInstanceState != null && host.navController.currentDestination?.id in setOf(R.id.main_screen, R.id.detail, R.id.search)) {
             navigation.checkRestoredSession()
         }
@@ -109,9 +112,16 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        if (intent.action == Intent.ACTION_VIEW) {
-            intent.dataString?.let(navigation::handleLink)
-        }
+        incomingLink(intent)?.let(navigation::handleLink)
+    }
+
+    private fun incomingLink(intent: Intent): String? {
+        if (intent.action == Intent.ACTION_VIEW) return intent.dataString
+        val extras = intent.extras ?: return null
+        val pushExtras = listOf("google.message_id", "deep_link")
+            .filter(extras::containsKey)
+            .associateWith { extras.getString(it) }
+        return pushParser.consoleTarget(pushExtras)
     }
 
     override fun onDestroy() {
