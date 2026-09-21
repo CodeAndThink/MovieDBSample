@@ -3,6 +3,7 @@ package com.truongngo.moviedb.presenter.login
 import com.truongngo.moviedb.domain.auth.RememberedEmailStore
 import com.truongngo.moviedb.domain.model.AuthUser
 import com.truongngo.moviedb.domain.repository.AuthRepository
+import com.truongngo.moviedb.domain.usecase.LoginUseCase
 import com.truongngo.moviedb.presenter.enum.LoadStatus
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -33,7 +34,7 @@ class LoginViewModelTest {
 
     @Test fun restoresEmailAndCheckboxWithoutPassword() = runTest(dispatcher) {
         store.email = "saved@example.com"
-        val vm = LoginViewModel(repository, store)
+        val vm = LoginViewModel(LoginUseCase(repository, store), store)
         runCurrent()
         assertEquals("saved@example.com", vm.stateFlow.value.email)
         assertTrue(vm.stateFlow.value.rememberMe)
@@ -42,7 +43,7 @@ class LoginViewModelTest {
     @Test fun lateReadDoesNotOverwriteUserInput() = runTest(dispatcher) {
         store.email = "saved@example.com"
         store.readGate = CompletableDeferred()
-        val vm = LoginViewModel(repository, store)
+        val vm = LoginViewModel(LoginUseCase(repository, store), store)
         runCurrent()
         vm.onEvent(LoginEvent.EmailChanged("new@example.com"))
         vm.onEvent(LoginEvent.RememberMeChanged(false))
@@ -53,7 +54,7 @@ class LoginViewModelTest {
         assertNull(store.email)
     }
     @Test fun successfulLoginSavesTrimmedEmailAndPreservesPasswordInput() = runTest(dispatcher) {
-        val vm = LoginViewModel(repository, store)
+        val vm = LoginViewModel(LoginUseCase(repository, store), store)
         runCurrent()
         fill(vm)
         vm.onEvent(LoginEvent.RememberMeChanged(true))
@@ -67,7 +68,7 @@ class LoginViewModelTest {
     @Test fun failedLoginDoesNotReplaceRememberedEmail() = runTest(dispatcher) {
         store.email = "saved@example.com"
         failLogin = true
-        val vm = LoginViewModel(repository, store)
+        val vm = LoginViewModel(LoginUseCase(repository, store), store)
         runCurrent()
         fill(vm)
         vm.onEvent(LoginEvent.LoginClicked)
@@ -77,7 +78,7 @@ class LoginViewModelTest {
     }
     @Test fun uncheckingClearsImmediatelyButKeepsTypedEmail() = runTest(dispatcher) {
         store.email = "saved@example.com"
-        val vm = LoginViewModel(repository, store)
+        val vm = LoginViewModel(LoginUseCase(repository, store), store)
         runCurrent()
         vm.onEvent(LoginEvent.RememberMeChanged(false))
         runCurrent()
@@ -90,7 +91,7 @@ class LoginViewModelTest {
     }
     @Test fun storageFailureDoesNotFailAuthenticatedLogin() = runTest(dispatcher) {
         store.fail = true
-        val vm = LoginViewModel(repository, store)
+        val vm = LoginViewModel(LoginUseCase(repository, store), store)
         runCurrent()
         assertEquals("", vm.stateFlow.value.email)
         fill(vm)
@@ -100,6 +101,27 @@ class LoginViewModelTest {
         assertEquals(LoadStatus.SUCCESS, vm.stateFlow.value.loadStatus)
         assertEquals(LoginEffect.NavigateHome, vm.uiEffect.first())
     }
+    @Test fun earlierUncheckCannotEraseEmailSavedByFollowingLogin() = runTest(dispatcher) {
+        store.email = "saved@example.com"
+        val vm = LoginViewModel(LoginUseCase(repository, store), store)
+        runCurrent()
+        store.clearGate = CompletableDeferred()
+        vm.onEvent(LoginEvent.RememberMeChanged(false))
+        runCurrent()
+        fill(vm)
+        vm.onEvent(LoginEvent.RememberMeChanged(true))
+        vm.onEvent(LoginEvent.LoginClicked)
+        vm.onEvent(LoginEvent.LoginClicked)
+        runCurrent()
+        assertEquals(LoadStatus.LOADING, vm.stateFlow.value.loadStatus)
+        store.clearGate!!.complete(Unit)
+        runCurrent()
+        assertEquals("new@example.com", store.email)
+        assertEquals(LoadStatus.SUCCESS, vm.stateFlow.value.loadStatus)
+        assertEquals("", vm.stateFlow.value.password)
+        assertEquals(LoginEffect.NavigateHome, vm.uiEffect.first())
+    }
+
     private fun fill(vm: LoginViewModel) {
         vm.onEvent(LoginEvent.EmailChanged(" new@example.com "))
         vm.onEvent(LoginEvent.PasswordChanged(" secret "))
@@ -108,6 +130,7 @@ class LoginViewModelTest {
         var email: String? = null
         var fail = false
         var readGate: CompletableDeferred<Unit>? = null
+        var clearGate: CompletableDeferred<Unit>? = null
         override suspend fun read(): String? {
             val snapshot = email
             readGate?.await()
@@ -115,6 +138,6 @@ class LoginViewModelTest {
             return snapshot
         }
         override suspend fun save(email: String) { check(!fail); this.email = email }
-        override suspend fun clear() { check(!fail); email = null }
+        override suspend fun clear() { clearGate?.await(); check(!fail); email = null }
     }
 }

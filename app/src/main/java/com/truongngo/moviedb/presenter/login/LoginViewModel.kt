@@ -4,13 +4,15 @@ import androidx.core.util.PatternsCompat
 import com.truongngo.moviedb.domain.auth.RememberedEmailStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.truongngo.moviedb.domain.repository.AuthRepository
+import com.truongngo.moviedb.domain.usecase.LoginUseCase
 import com.truongngo.moviedb.presenter.enum.LoadStatus
 import com.truongngo.moviedb.presenter.extension.isLoading
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
@@ -21,7 +23,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val authRepository: AuthRepository,
+    private val loginUseCase: LoginUseCase,
     private val rememberedEmail: RememberedEmailStore
 ) : ViewModel() {
     private val _stateFlow = MutableStateFlow(LoginState())
@@ -93,12 +95,11 @@ class LoginViewModel @Inject constructor(
         _stateFlow.update { it.copy(loadStatus = LoadStatus.LOADING) }
         viewModelScope.launch {
             try {
-                val user = authRepository.login(email, state.password).getOrThrow()
-                _stateFlow.update { it.copy(password = "") }
-                storageOperation {
-                    if (state.rememberMe) rememberedEmail.save(email) else rememberedEmail.clear()
+                // Share the lock with restore/uncheck so an earlier clear cannot erase the new saved email.
+                val user = storageMutex.withLock {
+                    loginUseCase(email, state.password, state.rememberMe)
                 }
-                _stateFlow.update { it.copy(loadStatus = LoadStatus.SUCCESS, user = user) }
+                _stateFlow.update { it.copy(password = "", loadStatus = LoadStatus.SUCCESS, user = user) }
                 _uiEffect.send(LoginEffect.NavigateHome)
             } catch (exception: CancellationException) {
                 throw exception

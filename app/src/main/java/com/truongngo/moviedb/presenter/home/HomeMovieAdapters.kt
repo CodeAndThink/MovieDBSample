@@ -8,12 +8,12 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.truongngo.moviedb.R
-import com.truongngo.moviedb.data.network.model.Movie
+import com.truongngo.moviedb.domain.model.HomeMovie
 import com.truongngo.moviedb.data.network.utils.NetworkUtils
 import com.truongngo.moviedb.databinding.ItemHomeBannerBinding
 import com.truongngo.moviedb.databinding.ItemHomeMovieBinding
 
-class HomeMovieAdapter(private val onMovieClick: (Movie) -> Unit = {}) : ListAdapter<Movie, HomeMovieAdapter.Holder>(MovieDiff) {
+class HomeMovieAdapter(private val onMovieClick: (HomeMovie) -> Unit = {}) : ListAdapter<HomeMovie, HomeMovieAdapter.Holder>(MovieDiff) {
     class Holder(val binding: ItemHomeMovieBinding) : RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = Holder(
@@ -36,9 +36,9 @@ class HomeMovieAdapter(private val onMovieClick: (Movie) -> Unit = {}) : ListAda
         }
     }
 
-    private object MovieDiff : DiffUtil.ItemCallback<Movie>() {
-        override fun areItemsTheSame(oldItem: Movie, newItem: Movie) = oldItem.id == newItem.id
-        override fun areContentsTheSame(oldItem: Movie, newItem: Movie) = oldItem == newItem
+    private object MovieDiff : DiffUtil.ItemCallback<HomeMovie>() {
+        override fun areItemsTheSame(oldItem: HomeMovie, newItem: HomeMovie) = oldItem.id == newItem.id
+        override fun areContentsTheSame(oldItem: HomeMovie, newItem: HomeMovie) = oldItem == newItem
     }
 }
 
@@ -54,13 +54,13 @@ internal object BannerPages {
     }
 }
 
-class HomeBannerAdapter(private val onMovieClick: (Movie) -> Unit = {}) : RecyclerView.Adapter<HomeBannerAdapter.Holder>() {
-    var movies: List<Movie> = emptyList()
+class HomeBannerAdapter(private val onMovieClick: (HomeMovie) -> Unit = {}) : RecyclerView.Adapter<HomeBannerAdapter.Holder>() {
+    var movies: List<HomeMovie> = emptyList()
         private set
 
     class Holder(val binding: ItemHomeBannerBinding) : RecyclerView.ViewHolder(binding.root)
 
-    fun submitMovies(value: List<Movie>): Boolean {
+    fun submitMovies(value: List<HomeMovie>): Boolean {
         val next = value.take(10)
         if (movies == next) return false
         movies = next
@@ -91,7 +91,7 @@ class HomeBannerAdapter(private val onMovieClick: (Movie) -> Unit = {}) : Recycl
     }
 }
 
-private fun TextView.bindMetadata(movie: Movie) {
+private fun TextView.bindMetadata(movie: HomeMovie) {
     val year = movie.releaseDate?.take(4)?.takeIf { it.isNotBlank() }
         ?: context.getString(R.string.home_unknown_year)
     text = context.getString(R.string.home_movie_metadata, movie.voteAverage, year)
