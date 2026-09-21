@@ -1,5 +1,7 @@
 package com.truongngo.moviedb.data.di
 
+import com.truongngo.moviedb.data.repository.MovieRepositoryImpl
+import com.truongngo.moviedb.domain.repository.MovieRepository
 import com.truongngo.moviedb.data.repository.AuthRepositoryImpl
 import com.truongngo.moviedb.data.repository.SettingsRepositoryImpl
 import com.truongngo.moviedb.domain.repository.AuthRepository
@@ -13,6 +15,11 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
+
+    @Binds
+    @Singleton
+    abstract fun bindMovieRepository(implementation: MovieRepositoryImpl): MovieRepository
+
 
     @Binds
     @Singleton

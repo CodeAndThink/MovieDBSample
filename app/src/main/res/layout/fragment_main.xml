@@ -24,8 +24,26 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         app:menu="@menu/menu"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/disconnect_message"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
+
+    <TextView
+        android:id="@+id/disconnect_message"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorErrorContainer"
+        android:textColor="?attr/colorOnErrorContainer"
+        android:text="@string/network_disconnected"
+        android:textSize="12sp"
+        android:gravity="center"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="4dp"
+        android:accessibilityLiveRegion="polite"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:visibility="visible" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

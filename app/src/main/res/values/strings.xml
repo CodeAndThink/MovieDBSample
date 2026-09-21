@@ -1,9 +1,10 @@
 <resources>
+    <string name="network_disconnected">Disconnect</string>
     <string name="app_name">My Movie</string>
     <string name="login_title">Login</string>
     <string name="login_email">Email</string>
     <string name="login_password">Password</string>
-    <string name="login_remember_me">Remember me</string>
+    <string name="login_remember_me">Remember email</string>
     <string name="login_no_account">Don\'t have an account? </string>
     <string name="login_signup">Sign Up</string>
     <string name="login_invalid_email">Enter a valid email address</string>

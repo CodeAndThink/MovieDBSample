@@ -1,50 +1,45 @@
 package com.truongngo.moviedb.presenter.home
 
-import com.truongngo.moviedb.data.network.ApiClients
-import com.truongngo.moviedb.data.network.model.*
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.runCurrent
-import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
+import com.truongngo.moviedb.domain.model.*
+import com.truongngo.moviedb.domain.repository.MovieRepository
+import com.truongngo.moviedb.domain.usecase.LoadHomeMoviesUseCase
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.test.*
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
-import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModelTest {
     private val dispatcher = StandardTestDispatcher()
-    private val api = FakeApi()
+    private val repository = FakeRepository()
     @Before fun setup() { Dispatchers.setMain(dispatcher) }
     @After fun teardown() { Dispatchers.resetMain() }
+    private fun viewModel() = HomeViewModel(LoadHomeMoviesUseCase(repository))
 
     @Test fun loadsSectionsIndependentlyAndLimitsBannerToTen() = runTest(dispatcher) {
-        api.topRated = { throw IOException("offline") }
-        val vm = HomeViewModel(api)
+        repository.topRated = { flowOf(MovieLoadResult.Error(MovieLoadError.CONNECTION)) }
+        val vm = viewModel()
         runCurrent()
-        val state = vm.stateFlow.value
-        assertEquals(10, state.nowPlaying.size)
-        assertEquals(2, state.sections.getValue(MovieSection.POPULAR).movies.size)
-        assertEquals(HomeError.CONNECTION, state.sections.getValue(MovieSection.TOP_RATED).error)
-        assertFalse(state.isRefreshing)
+        assertEquals(10, vm.stateFlow.value.nowPlaying.size)
+        assertEquals(2, vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).movies.size)
+        assertEquals(HomeError.CONNECTION, vm.stateFlow.value.sections.getValue(MovieSection.TOP_RATED).error)
+        assertFalse(vm.stateFlow.value.isRefreshing)
+        assertEquals(4, repository.modes.size)
+        assertTrue(repository.modes.all { it == HomeLoadMode.CACHE_FIRST })
     }
 
     @Test fun duplicateLoadMoreIsBlockedAndResultsAreDeduplicated() = runTest(dispatcher) {
-        val vm = HomeViewModel(api)
+        val vm = viewModel()
         runCurrent()
-        val pending = CompletableDeferred<MoviePage>()
-        api.popular = { pending.await() }
+        val pending = CompletableDeferred<HomeMoviePage>()
+        repository.popular = { flow { emit(MovieLoadResult.Data(pending.await())) } }
         vm.onEvent(HomeEvent.LoadMore(MovieSection.POPULAR))
         vm.onEvent(HomeEvent.LoadMore(MovieSection.POPULAR))
         runCurrent()
-        assertEquals(listOf(1, 2), api.popularCalls)
+        assertEquals(listOf(1, 2), repository.popularCalls)
         pending.complete(page(2, listOf(2, 3), total = 2))
         runCurrent()
         val state = vm.stateFlow.value.sections.getValue(MovieSection.POPULAR)
@@ -52,34 +47,40 @@ class HomeViewModelTest {
         assertFalse(state.canLoadMore)
         vm.onEvent(HomeEvent.LoadMore(MovieSection.POPULAR))
         runCurrent()
-        assertEquals(listOf(1, 2), api.popularCalls)
+        assertEquals(listOf(1, 2), repository.popularCalls)
     }
 
     @Test fun failedPageKeepsContentAndRetriesTheSamePage() = runTest(dispatcher) {
-        val vm = HomeViewModel(api)
+        val vm = viewModel()
         runCurrent()
-        api.popular = { throw IOException("offline") }
+        repository.popular = { flowOf(MovieLoadResult.Error(MovieLoadError.CONNECTION)) }
         vm.onEvent(HomeEvent.LoadMore(MovieSection.POPULAR))
         runCurrent()
         assertEquals(2, vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).movies.size)
         vm.onEvent(HomeEvent.LoadMore(MovieSection.POPULAR))
         runCurrent()
-        assertEquals(listOf(1, 2), api.popularCalls)
-        api.popular = { page(it, listOf(3, 4)) }
+        assertEquals(listOf(1, 2), repository.popularCalls)
+        repository.popular = { flowOf(MovieLoadResult.Data(page(it, listOf(3, 4)))) }
         vm.onEvent(HomeEvent.RetrySection(MovieSection.POPULAR))
         runCurrent()
-        assertEquals(listOf(1, 2, 2), api.popularCalls)
+        assertEquals(listOf(1, 2, 2), repository.popularCalls)
+        assertEquals(HomeLoadMode.FORCE_REFRESH, repository.modes.last())
         assertNull(vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).error)
     }
 
     @Test fun refreshDiscardsStaleLoadMoreEvenIfItIgnoresCancellation() = runTest(dispatcher) {
-        val vm = HomeViewModel(api)
+        val vm = viewModel()
         runCurrent()
-        val pending = CompletableDeferred<MoviePage>()
-        api.popular = { withContext(NonCancellable) { pending.await() } }
+        val pending = CompletableDeferred<HomeMoviePage>()
+        // Deliberately non-cooperative upstream proves the ViewModel generation guard independently.
+        repository.popular = { object : Flow<MovieLoadResult> {
+            override suspend fun collect(collector: FlowCollector<MovieLoadResult>) {
+                withContext(NonCancellable) { collector.emit(MovieLoadResult.Data(pending.await())) }
+            }
+        } }
         vm.onEvent(HomeEvent.LoadMore(MovieSection.POPULAR))
         runCurrent()
-        api.popular = { page(1, listOf(99)) }
+        repository.popular = { flowOf(MovieLoadResult.Data(page(1, listOf(99)))) }
         vm.onEvent(HomeEvent.Refresh)
         runCurrent()
         pending.complete(page(2, listOf(88)))
@@ -90,29 +91,29 @@ class HomeViewModelTest {
     }
 
     @Test fun refreshFailureRetriesFirstPageInsteadOfAppending() = runTest(dispatcher) {
-        val vm = HomeViewModel(api)
+        val vm = viewModel()
         runCurrent()
         vm.onEvent(HomeEvent.LoadMore(MovieSection.POPULAR))
         runCurrent()
-        api.popular = { throw IOException("offline") }
+        repository.popular = { flowOf(MovieLoadResult.Error(MovieLoadError.CONNECTION)) }
         vm.onEvent(HomeEvent.Refresh)
         runCurrent()
         assertEquals(2, vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).page)
-        api.popular = { page(it, listOf(77)) }
+        assertTrue(repository.modes.takeLast(4).all { it == HomeLoadMode.FORCE_REFRESH })
+        repository.popular = { flowOf(MovieLoadResult.Data(page(it, listOf(77)))) }
         vm.onEvent(HomeEvent.RetrySection(MovieSection.POPULAR))
         runCurrent()
-        val state = vm.stateFlow.value.sections.getValue(MovieSection.POPULAR)
-        assertEquals(listOf(77), state.movies.map { it.id })
-        assertEquals(listOf(1, 2, 1, 1), api.popularCalls)
+        assertEquals(listOf(77), vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).movies.map { it.id })
+        assertEquals(listOf(1, 2, 1, 1), repository.popularCalls)
     }
 
     @Test fun emptyResponseStopsPaginationAndRefreshDoesNotDuplicateRequests() = runTest(dispatcher) {
-        api.popular = { page(it, emptyList()) }
-        val vm = HomeViewModel(api)
+        repository.popular = { flowOf(MovieLoadResult.Data(page(it, emptyList()))) }
+        val vm = viewModel()
         vm.onEvent(HomeEvent.Refresh)
         runCurrent()
         assertFalse(vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).canLoadMore)
-        assertEquals(listOf(1), api.popularCalls)
+        assertEquals(listOf(1), repository.popularCalls)
     }
 
     @Test fun bannerWrapsBothDirectionsIncludingSmallLists() {
@@ -126,26 +127,24 @@ class HomeViewModelTest {
         assertEquals(0, BannerPages.settledPosition(0, 1))
     }
 
-    private class FakeApi : ApiClients {
+    private class FakeRepository : MovieRepository {
         val popularCalls = mutableListOf<Int>()
-        var popular: suspend (Int) -> MoviePage = { page(it, listOf(1, 2)) }
-        var topRated: suspend (Int) -> MoviePage = { page(it, listOf(3, 4)) }
-        override suspend fun getPopularMovies(page: Int, language: String, region: String?): MoviePage {
-            popularCalls += page
-            return popular(page)
+        val modes = mutableListOf<HomeLoadMode>()
+        var popular: (Int) -> Flow<MovieLoadResult> = { flowOf(MovieLoadResult.Data(page(it, listOf(1, 2)))) }
+        var topRated: (Int) -> Flow<MovieLoadResult> = { flowOf(MovieLoadResult.Data(page(it, listOf(3, 4)))) }
+        override fun loadHomeMovies(feed: HomeFeed, page: Int, mode: HomeLoadMode): Flow<MovieLoadResult> {
+            modes += mode
+            return when (feed) {
+                HomeFeed.POPULAR -> { popularCalls += page; popular(page) }
+                HomeFeed.TOP_RATED -> topRated(page)
+                HomeFeed.UPCOMING -> flowOf(MovieLoadResult.Data(page(page, listOf(5, 6))))
+                HomeFeed.NOW_PLAYING -> flowOf(MovieLoadResult.Data(page(page, listOf(1, 1) + (2..20).toList())))
+            }
         }
-        override suspend fun getTopRatedMovies(page: Int, language: String, region: String?) = topRated(page)
-        override suspend fun getUpcomingMovies(page: Int, language: String, region: String?) = page(page, listOf(5, 6))
-        override suspend fun getNowPlayingMovies(page: Int, language: String, region: String?) = page(page, (1..20).toList())
-        override suspend fun searchMovies(query: String, page: Int, language: String, includeAdult: Boolean): MoviePage = error("Unused")
-        override suspend fun getMovieDetails(movieId: Int, language: String): Movie = error("Unused")
-        override suspend fun getMovieVideos(movieId: Int, language: String): VideoResponse = error("Unused")
-        override suspend fun getMovieCredits(movieId: Int, language: String): CreditsResponse = error("Unused")
-        override suspend fun getMovieGenres(language: String): GenreResponse = error("Unused")
     }
 
     companion object {
-        private fun page(page: Int, ids: List<Int>, total: Int = 3) = MoviePage(page,
-            ids.map { Movie(it, "Movie $it", null, null, null, null, "2026-01-01", 8.0, 10, null, null, null) }, total, 60)
+        private fun page(page: Int, ids: List<Int>, total: Int = 3) = HomeMoviePage(page,
+            ids.map { HomeMovie(it, "Movie $it", null, null, "2026-01-01", 8.0) }, total, 60)
     }
 }

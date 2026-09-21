@@ -2,7 +2,7 @@
 
 - Android Kotlin, một module `app`; XML + Fragment + View Binding, Hilt, Coroutines/Flow. Không tự chuyển sang Compose hoặc thêm tầng kiến trúc.
 - Source: `app/src/main/java/com/truongngo/moviedb/`; `presenter` = UI/ViewModel, `domain` = model/contract/use case, `data` = implementation.
-- Home/Search/Detail hiện gọi `ApiClients` trực tiếp. Auth/Settings/Download dùng domain contract. Giữ pattern hiện có khi sửa cục bộ.
+- Home dùng `LoadHomeMoviesUseCase` → `MovieRepository`; Search/Detail hiện gọi `ApiClients` trực tiếp. Auth/Settings/Download dùng domain contract. Giữ pattern hiện có khi sửa cục bộ.
 - Fragment render + nhận thao tác; ViewModel xử lý logic/state. StateFlow cho state, Channel/Flow cho effect một lần. Settings/Main không cần ép thêm Event/Effect.
 - Collect theo view lifecycle + `repeatOnLifecycle`; giải phóng binding/listener/dialog ở `onDestroyView`. Không giữ View trong ViewModel.
 - Coroutine: truyền tiếp CancellationException; chặn request trùng; giữ cơ chế cancel/generation chống response cũ.

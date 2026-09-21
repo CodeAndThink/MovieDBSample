@@ -1,4 +1,5 @@
 [versions]
+room = "2.8.4"
 agp = "9.3.2"
 coil = "2.7.0"
 coreKtx = "1.10.1"
@@ -29,6 +30,9 @@ viewpager2 = "1.0.0"
 workRuntimeKtx = "2.10.1"
 
 [libraries]
+androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+androidx-security-crypto = { module = "androidx.security:security-crypto", version = "1.1.0" }
 androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version.ref = "recyclerview" }
 androidx-swiperefreshlayout = { module = "androidx.swiperefreshlayout:swiperefreshlayout", version.ref = "swiperefreshlayout" }
 androidx-viewpager2 = { module = "androidx.viewpager2:viewpager2", version.ref = "viewpager2" }
