@@ -1,5 +1,10 @@
 package com.truongngo.moviedb.presenter.settings
 
+import com.truongngo.moviedb.domain.repository.NotificationTokenProvider
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.truongngo.moviedb.domain.model.SettingsModel
@@ -15,7 +20,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val notificationTokenProvider: NotificationTokenProvider
 ) : ViewModel() {
 
     val settings: StateFlow<SettingsModel> = settingsRepository.getSettings()
@@ -24,6 +30,29 @@ class SettingsViewModel @Inject constructor(
             started = SharingStarted.Eagerly,
             initialValue = SettingsModel(ThemeMode.SYSTEM)
         )
+
+    private val _notificationToken = MutableStateFlow<NotificationTokenState>(NotificationTokenState.Idle)
+    val notificationToken = _notificationToken.asStateFlow()
+
+    fun loadNotificationToken() {
+        if (_notificationToken.value == NotificationTokenState.Loading) return
+        _notificationToken.value = NotificationTokenState.Loading
+        viewModelScope.launch {
+            try {
+                val token = withTimeoutOrNull(15_000) { notificationTokenProvider.getCurrentToken() }
+                _notificationToken.value = if (token.isNullOrBlank()) NotificationTokenState.Error
+                    else NotificationTokenState.Ready(token)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                _notificationToken.value = NotificationTokenState.Error
+            } finally {
+                if (_notificationToken.value == NotificationTokenState.Loading) {
+                    _notificationToken.value = NotificationTokenState.Idle
+                }
+            }
+        }
+    }
 
     fun onLanguageChanged(language: AppLanguage) {
         viewModelScope.launch { settingsRepository.setLanguage(language) }

@@ -25,6 +25,33 @@ class NavigationViewModelTest {
         state, DeepLinkService(), session
     )
 
+    @Test fun consolePushSurvivesColdStartAndRotationThenResumesAfterLogin() {
+        val parser = com.truongngo.moviedb.presenter.notification.PushNotificationParser(DeepLinkService())
+        val state = SavedStateHandle()
+        val vm = model(state)
+        val link = parser.consoleTarget(mapOf("google.message_id" to "push-1", "deep_link" to "moviedb://app/detail/550"))
+        vm.start(link, false)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertEquals("LOGIN", vm.command.value)
+        vm.consumed("LOGIN")
+        val restored = model(SavedStateHandle(state.keys().associateWith { state.get<Any?>(it) }))
+        restored.start(link, true)
+        assertNull(restored.command.value)
+        session.signedIn = true
+        restored.authenticated()
+        assertEquals("DETAIL:550", restored.command.value)
+    }
+
+    @Test fun consolePushDuringStartupReplacesOldMovie() {
+        val parser = com.truongngo.moviedb.presenter.notification.PushNotificationParser(DeepLinkService())
+        session.signedIn = true
+        val vm = model()
+        vm.start("moviedb://app/detail/1", false)
+        vm.handleLink(parser.consoleTarget(mapOf("deep_link" to "moviedb://app/detail/2"))!!)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertEquals("DETAIL:2", vm.command.value)
+    }
+
     @Test fun protectedLinkContinuesAfterAuthenticationAcrossRecreation() {
         val saved = SavedStateHandle()
         val vm = model(saved)
@@ -134,6 +161,44 @@ class NavigationViewModelTest {
         assertEquals("DETAIL:42", vm.command.value)
         vm.back()
         assertEquals("BACK", vm.command.value)
+    }
+
+    @Test fun splashWaitsForPermissionResultAndKeepsLatestPush() {
+        session.signedIn = true
+        val vm = model()
+        vm.start("moviedb://app/detail/1", false, waitForNotificationPermission = true)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertNull(vm.command.value)
+        vm.handleLink("moviedb://app/detail/2")
+        assertNull(vm.command.value)
+        vm.notificationPermissionFinished()
+        dispatcher.scheduler.advanceUntilIdle()
+        assertEquals("DETAIL:2", vm.command.value)
+    }
+
+    @Test fun permissionResultBeforeDelayDoesNotSkipSplashDelay() {
+        val vm = model()
+        vm.notificationPermissionFinished()
+        vm.start(null, false, waitForNotificationPermission = true)
+        dispatcher.scheduler.advanceTimeBy(499)
+        assertNull(vm.command.value)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertEquals("LOGIN", vm.command.value)
+    }
+
+    @Test fun permissionGateAndLinkSurviveSavedStateRestoration() {
+        val state = SavedStateHandle()
+        val vm = model(state)
+        vm.start("moviedb://app/detail/42", false, waitForNotificationPermission = true)
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.notificationPermissionFinished()
+        val restored = model(SavedStateHandle(state.keys().associateWith { state.get<Any?>(it) }))
+        restored.start(null, true, onSplash = true, waitForNotificationPermission = true)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertEquals("LOGIN", restored.command.value)
+        session.signedIn = true
+        restored.authenticated()
+        assertEquals("DETAIL:42", restored.command.value)
     }
 
     @Test fun signedInStartupOpensHome() {

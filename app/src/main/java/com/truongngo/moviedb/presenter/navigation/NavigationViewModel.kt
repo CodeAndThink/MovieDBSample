@@ -2,6 +2,7 @@ package com.truongngo.moviedb.presenter.navigation
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.lifecycle.ViewModel
@@ -22,7 +23,12 @@ class NavigationViewModel @Inject constructor(
 
     private var starting = false
 
-    fun start(url: String?, restored: Boolean, onSplash: Boolean = false) {
+    fun start(
+        url: String?,
+        restored: Boolean,
+        onSplash: Boolean = false,
+        waitForNotificationPermission: Boolean = false,
+    ) {
         if (starting || command.value != null || (restored && !onSplash)) return
         if (!restored) {
             savedState[START_TARGET] = url?.let { links.resolve(it)?.encode() }
@@ -31,11 +37,18 @@ class NavigationViewModel @Inject constructor(
         starting = true
         viewModelScope.launch {
             delay(500.milliseconds)
+            if (waitForNotificationPermission) {
+                savedState.getStateFlow(NOTIFICATION_PERMISSION_FINISHED, false).first { it }
+            }
             val target = savedState.get<String>(START_TARGET)?.let(AppDestination::decode)
             savedState[START_TARGET] = null
             starting = false
             navigate(target ?: if (session.isSignedIn()) AppDestination.HOME else AppDestination.LOGIN)
         }
+    }
+
+    fun notificationPermissionFinished() {
+        savedState[NOTIFICATION_PERMISSION_FINISHED] = true
     }
 
     fun handleLink(url: String): Boolean {
@@ -91,6 +104,7 @@ class NavigationViewModel @Inject constructor(
     fun invalidLinkShown() { savedState[INVALID_LINK] = false }
 
     companion object {
+        private const val NOTIFICATION_PERMISSION_FINISHED = "notification_permission_finished"
         private const val START_TARGET = "startup_destination"
         private const val COMMAND = "navigation_command"
         private const val PENDING = "pending_destination"
