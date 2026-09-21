@@ -18,6 +18,7 @@ import com.truongngo.moviedb.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
+import androidx.core.net.toUri
 
 /** Demo only: advances a counter, without network requests or filesystem output. */
 class SimulatedDownloadWorker(context: Context, parameters: WorkerParameters) : CoroutineWorker(context, parameters) {
@@ -26,7 +27,7 @@ class SimulatedDownloadWorker(context: Context, parameters: WorkerParameters) : 
         return try {
             setForeground(foreground(0))
             for (percent in 1..100) {
-                delay(200.milliseconds, )
+                delay(500.milliseconds)
                 setProgress(workDataOf(PROGRESS to percent))
                 setForeground(foreground(percent))
             }
@@ -45,7 +46,7 @@ class SimulatedDownloadWorker(context: Context, parameters: WorkerParameters) : 
         manager.createNotificationChannel(NotificationChannel(CHANNEL, context.getString(R.string.download_channel), NotificationManager.IMPORTANCE_LOW))
         val intent = Intent(context, MainActivity::class.java).apply {
             action = Intent.ACTION_VIEW
-            data = Uri.parse("moviedb://app/detail/$movieId")
+            data = "moviedb://app/detail/$movieId".toUri()
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         val notification = NotificationCompat.Builder(context, CHANNEL)

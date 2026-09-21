@@ -1,5 +1,6 @@
 package com.truongngo.moviedb.presenter.settings
 
+import android.Manifest
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -15,6 +16,9 @@ import com.truongngo.moviedb.domain.model.AppLanguage
 import com.truongngo.moviedb.R
 import com.truongngo.moviedb.databinding.FragmentSettingsBinding
 import com.truongngo.moviedb.presenter.enum.ThemeMode
+import com.truongngo.moviedb.presenter.common.PermissionManager
+import com.truongngo.moviedb.presenter.common.PermissionMessages
+import com.truongngo.moviedb.presenter.common.RuntimePermission
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -23,6 +27,14 @@ class SettingsFragment : Fragment() {
 
     private val viewModel: SettingsViewModel by hiltNavGraphViewModels(R.id.main_navigation)
     private val navigation: NavigationViewModel by activityViewModels()
+    private val notificationPermission = PermissionManager(
+        this,
+        listOf(RuntimePermission(Manifest.permission.POST_NOTIFICATIONS, minSdk = 33)),
+        PermissionMessages(
+            R.string.push_permission_title, R.string.push_permission_rationale,
+            R.string.push_permission_denied, R.string.push_permission_blocked,
+        ),
+    ) { }
     private var isRendering = false
     private var _binding: FragmentSettingsBinding? = null
     private val binding get() = _binding!!
@@ -64,6 +76,8 @@ class SettingsFragment : Fragment() {
             }
         }
 
+        binding.btnEnableNotifications.setOnClickListener { notificationPermission.request() }
+
         binding.btnLogout.setOnClickListener { navigation.logout() }
 
         binding.radioGroupTheme.setOnCheckedChangeListener { _, checkedId ->
@@ -79,7 +93,12 @@ class SettingsFragment : Fragment() {
     }
 
     override fun onDestroyView() {
-        super.onDestroyView()
+        notificationPermission.dismiss()
+        binding.btnEnableNotifications.setOnClickListener(null)
+        binding.btnLogout.setOnClickListener(null)
+        binding.radioGroupTheme.setOnCheckedChangeListener(null)
+        binding.radioGroupLanguage.setOnCheckedChangeListener(null)
         _binding = null
+        super.onDestroyView()
     }
 }

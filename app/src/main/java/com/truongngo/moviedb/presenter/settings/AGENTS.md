@@ -7,3 +7,4 @@
 - Language chỉ đổi UI resources, chưa đổi ngôn ngữ nội dung TMDB.
 - Logout qua NavigationViewModel. ThemeMode hiện thuộc presenter nhưng domain/data còn dùng; không mở rộng phụ thuộc này.
 - Test: SettingsPersistenceTest và navigation tests; persistence, recreate, logout.
+- Nút bật thông báo dùng PermissionManager; dismiss dialog và tháo listener ở onDestroyView. Không lưu quyền vào SettingsRepository.
