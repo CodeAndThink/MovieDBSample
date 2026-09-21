@@ -1,6 +1,16 @@
 package com.truongngo.moviedb.presenter.settings
 
 import android.Manifest
+import android.content.ClipData
+import android.content.ClipDescription
+import android.content.ClipboardManager
+import android.os.PersistableBundle
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import android.provider.Settings
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -34,7 +44,8 @@ class SettingsFragment : Fragment() {
             R.string.push_permission_title, R.string.push_permission_rationale,
             R.string.push_permission_denied, R.string.push_permission_blocked,
         ),
-    ) { }
+    ) { renderNotificationToggle() }
+    private var isRenderingNotifications = false
     private var isRendering = false
     private var _binding: FragmentSettingsBinding? = null
     private val binding get() = _binding!!
@@ -68,6 +79,34 @@ class SettingsFragment : Fragment() {
             }
         }
 
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.notificationToken.collect { state ->
+                    binding.textNotificationToken.text = when (state) {
+                        is NotificationTokenState.Ready -> state.token
+                        NotificationTokenState.Error -> getString(R.string.settings_token_error)
+                        else -> getString(R.string.settings_token_loading)
+                    }
+                    binding.btnCopyToken.isEnabled = state is NotificationTokenState.Ready || state == NotificationTokenState.Error
+                    binding.btnCopyToken.setText(if (state == NotificationTokenState.Error)
+                        R.string.settings_token_retry else R.string.settings_copy_token)
+                }
+            }
+        }
+        binding.btnCopyToken.setOnClickListener {
+            when (val state = viewModel.notificationToken.value) {
+                is NotificationTokenState.Ready -> {
+                    val clip = ClipData.newPlainText(getString(R.string.settings_fcm_token), state.token)
+                    clip.description.extras = PersistableBundle().apply {
+                        putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)
+                    }
+                    requireContext().getSystemService(ClipboardManager::class.java).setPrimaryClip(clip)
+                }
+                NotificationTokenState.Error -> viewModel.loadNotificationToken()
+                else -> Unit
+            }
+        }
+
         binding.radioGroupLanguage.setOnCheckedChangeListener { _, checkedId ->
             if (isRendering) return@setOnCheckedChangeListener
             when (checkedId) {
@@ -76,7 +115,21 @@ class SettingsFragment : Fragment() {
             }
         }
 
-        binding.btnEnableNotifications.setOnClickListener { notificationPermission.request() }
+        renderNotificationToggle()
+        binding.switchNotifications.setOnCheckedChangeListener { _, checked ->
+            if (isRenderingNotifications) return@setOnCheckedChangeListener
+            // The OS owns this state; do not display an optimistic permission change.
+            renderNotificationToggle()
+            if (checked && Build.VERSION.SDK_INT >= 33 &&
+                ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+            ) {
+                notificationPermission.request()
+            } else {
+                startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                    putExtra(Settings.EXTRA_APP_PACKAGE, requireContext().packageName)
+                })
+            }
+        }
 
         binding.btnLogout.setOnClickListener { navigation.logout() }
 
@@ -92,9 +145,23 @@ class SettingsFragment : Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        renderNotificationToggle()
+        viewModel.loadNotificationToken()
+    }
+
+    private fun renderNotificationToggle() {
+        val viewBinding = _binding ?: return
+        isRenderingNotifications = true
+        viewBinding.switchNotifications.isChecked = NotificationManagerCompat.from(requireContext()).areNotificationsEnabled()
+        isRenderingNotifications = false
+    }
+
     override fun onDestroyView() {
         notificationPermission.dismiss()
-        binding.btnEnableNotifications.setOnClickListener(null)
+        binding.switchNotifications.setOnCheckedChangeListener(null)
+        binding.btnCopyToken.setOnClickListener(null)
         binding.btnLogout.setOnClickListener(null)
         binding.radioGroupTheme.setOnCheckedChangeListener(null)
         binding.radioGroupLanguage.setOnCheckedChangeListener(null)

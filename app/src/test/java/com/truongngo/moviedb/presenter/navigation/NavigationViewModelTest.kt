@@ -163,6 +163,44 @@ class NavigationViewModelTest {
         assertEquals("BACK", vm.command.value)
     }
 
+    @Test fun splashWaitsForPermissionResultAndKeepsLatestPush() {
+        session.signedIn = true
+        val vm = model()
+        vm.start("moviedb://app/detail/1", false, waitForNotificationPermission = true)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertNull(vm.command.value)
+        vm.handleLink("moviedb://app/detail/2")
+        assertNull(vm.command.value)
+        vm.notificationPermissionFinished()
+        dispatcher.scheduler.advanceUntilIdle()
+        assertEquals("DETAIL:2", vm.command.value)
+    }
+
+    @Test fun permissionResultBeforeDelayDoesNotSkipSplashDelay() {
+        val vm = model()
+        vm.notificationPermissionFinished()
+        vm.start(null, false, waitForNotificationPermission = true)
+        dispatcher.scheduler.advanceTimeBy(499)
+        assertNull(vm.command.value)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertEquals("LOGIN", vm.command.value)
+    }
+
+    @Test fun permissionGateAndLinkSurviveSavedStateRestoration() {
+        val state = SavedStateHandle()
+        val vm = model(state)
+        vm.start("moviedb://app/detail/42", false, waitForNotificationPermission = true)
+        dispatcher.scheduler.advanceUntilIdle()
+        vm.notificationPermissionFinished()
+        val restored = model(SavedStateHandle(state.keys().associateWith { state.get<Any?>(it) }))
+        restored.start(null, true, onSplash = true, waitForNotificationPermission = true)
+        dispatcher.scheduler.advanceUntilIdle()
+        assertEquals("LOGIN", restored.command.value)
+        session.signedIn = true
+        restored.authenticated()
+        assertEquals("DETAIL:42", restored.command.value)
+    }
+
     @Test fun signedInStartupOpensHome() {
         session.signedIn = true
         val vm = model()

@@ -16,6 +16,7 @@ import com.truongngo.moviedb.R
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import androidx.core.net.toUri
 
 @Singleton
 class PushNotificationHandler @Inject constructor(
@@ -36,7 +37,7 @@ class PushNotificationHandler @Inject constructor(
             !manager.areNotificationsEnabled()) return
         val intent = Intent(context, MainActivity::class.java).apply {
             action = Intent.ACTION_VIEW
-            data = Uri.parse(parser.targetLink(payload.deepLink))
+            data = parser.targetLink(payload.deepLink).toUri()
             // Intent identity includes categories, so two messages for the same film stay independent.
             addCategory("${context.packageName}.push.${payload.id}")
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP

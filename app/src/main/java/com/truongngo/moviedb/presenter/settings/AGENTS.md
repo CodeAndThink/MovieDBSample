@@ -7,4 +7,5 @@
 - Language chỉ đổi UI resources, chưa đổi ngôn ngữ nội dung TMDB.
 - Logout qua NavigationViewModel. ThemeMode hiện thuộc presenter nhưng domain/data còn dùng; không mở rộng phụ thuộc này.
 - Test: SettingsPersistenceTest và navigation tests; persistence, recreate, logout.
-- Nút bật thông báo dùng PermissionManager; dismiss dialog và tháo listener ở onDestroyView. Không lưu quyền vào SettingsRepository.
+- Toggle thông báo phản ánh areNotificationsEnabled, refresh ở onResume/callback. Bật dùng PermissionManager nếu thiếu quyền; tắt mở system notification settings. Không lưu quyền vào SettingsRepository; guard khi render, dismiss dialog và tháo listener ở onDestroyView.
+- Token FCM: ViewModel → NotificationTokenProvider; StateFlow trong bộ nhớ, chống tải trùng, timeout/retry, truyền CancellationException. Không log/lưu token vào state khôi phục; copy nguyên token, đánh dấu clipboard sensitive. Test SettingsTokenTest.

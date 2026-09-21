@@ -68,12 +68,48 @@
                 android:text="@string/settings_language_vietnamese" />
         </RadioGroup>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_enable_notifications"
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/switch_notifications"
+            android:saveEnabled="false"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="@string/push_enable_notifications" />
+            android:minHeight="48dp"
+            android:text="@string/settings_notifications" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/settings_fcm_token"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/text_notification_token"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="12dp"
+                android:saveEnabled="false"
+                android:maxLines="2"
+                android:ellipsize="end"
+                android:text="@string/settings_token_loading" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_copy_token"
+                style="?attr/borderlessButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:enabled="false"
+                android:saveEnabled="false"
+                android:text="@string/settings_copy_token" />
+        </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_logout"
