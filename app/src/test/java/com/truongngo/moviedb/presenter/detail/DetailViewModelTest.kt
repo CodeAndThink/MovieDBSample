@@ -1,5 +1,6 @@
 package com.truongngo.moviedb.presenter.detail
 
+import com.truongngo.moviedb.domain.model.MovieLoadError
 import androidx.lifecycle.SavedStateHandle
 import com.truongngo.moviedb.data.network.ApiClients
 import com.truongngo.moviedb.data.network.model.*
@@ -39,7 +40,7 @@ class DetailViewModelTest {
         api.details = { throw IOException("offline") }
         val vm = DetailViewModel(api, SavedStateHandle(mapOf("movieId" to 7)))
         runCurrent()
-        assertEquals(DetailError.CONNECTION, vm.stateFlow.value.error)
+        assertEquals(MovieLoadError.CONNECTION, vm.stateFlow.value.error)
         api.details = { page(1, listOf(it)).results.first() }
         vm.onEvent(DetailEvent.Retry)
         runCurrent()
@@ -51,7 +52,7 @@ class DetailViewModelTest {
     @Test fun missingMovieDoesNotCallApiAndBackEmitsEffect() = runTest(dispatcher) {
         val vm = DetailViewModel(api, SavedStateHandle())
         runCurrent()
-        assertEquals(DetailError.INVALID_MOVIE, vm.stateFlow.value.error)
+        assertEquals(MovieLoadError.INVALID_MOVIE, vm.stateFlow.value.error)
         assertTrue(api.detailCalls.isEmpty())
         vm.onEvent(DetailEvent.BackClicked)
         assertEquals(DetailEffect.NavigateBack, vm.effectFlow.first())
@@ -81,6 +82,13 @@ class DetailViewModelTest {
         runCurrent()
         vm.onEvent(DetailEvent.BackClicked)
         assertEquals(DetailEffect.NavigateBack, vm.effectFlow.first())
+    }
+
+    @Test fun forbiddenIsDistinctFromAuthentication() = runTest(dispatcher) {
+        api.details = { throw com.truongngo.moviedb.data.network.NetworkException(403, null, null) }
+        val vm = DetailViewModel(api, SavedStateHandle(mapOf("movieId" to 7)))
+        runCurrent()
+        assertEquals(MovieLoadError.FORBIDDEN, vm.stateFlow.value.error)
     }
 
     private class FakeApi : ApiClients {

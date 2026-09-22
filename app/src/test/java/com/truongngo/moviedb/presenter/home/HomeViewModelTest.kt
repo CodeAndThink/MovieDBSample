@@ -25,7 +25,7 @@ class HomeViewModelTest {
         runCurrent()
         assertEquals(10, vm.stateFlow.value.nowPlaying.size)
         assertEquals(2, vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).movies.size)
-        assertEquals(HomeError.CONNECTION, vm.stateFlow.value.sections.getValue(MovieSection.TOP_RATED).error)
+        assertEquals(MovieLoadError.CONNECTION, vm.stateFlow.value.sections.getValue(MovieSection.TOP_RATED).error)
         assertFalse(vm.stateFlow.value.isRefreshing)
         assertEquals(4, repository.modes.size)
         assertTrue(repository.modes.all { it == HomeLoadMode.CACHE_FIRST })
@@ -125,6 +125,20 @@ class HomeViewModelTest {
         assertEquals(0, BannerPages.count(0))
         assertEquals(1, BannerPages.count(1))
         assertEquals(0, BannerPages.settledPosition(0, 1))
+    }
+
+    @Test fun serverErrorSurvivesIntoHomeStateWithoutDroppingMovies() = runTest(dispatcher) {
+        val vm = viewModel()
+        runCurrent()
+        val movies = vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).movies
+        repository.popular = { flowOf(MovieLoadResult.Error(MovieLoadError.SERVER)) }
+        vm.onEvent(HomeEvent.Refresh)
+        runCurrent()
+        val section = vm.stateFlow.value.sections.getValue(MovieSection.POPULAR)
+        assertEquals(MovieLoadError.SERVER, section.error)
+        assertEquals(movies, section.movies)
+        assertEquals(1, section.retryPage)
+        assertFalse(section.isLoading)
     }
 
     private class FakeRepository : MovieRepository {

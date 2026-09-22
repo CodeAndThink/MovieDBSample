@@ -53,4 +53,9 @@
     <string name="settings_token_error">Không lấy được token. Kiểm tra kết nối và thử lại.</string>
     <string name="settings_copy_token">Sao chép</string>
     <string name="settings_token_retry">Thử lại</string>
+    <string name="movie_error_forbidden">Bạn không có quyền truy cập nội dung phim này.</string>
+    <string name="movie_error_not_found">Không tìm thấy nội dung phim được yêu cầu.</string>
+    <string name="movie_error_rate_limited">Có quá nhiều yêu cầu. Vui lòng đợi rồi thử lại.</string>
+    <string name="movie_error_timeout">Yêu cầu quá thời gian chờ. Vui lòng thử lại.</string>
+    <string name="movie_error_server">Dịch vụ phim tạm thời không khả dụng. Vui lòng thử lại sau.</string>
 </resources>

@@ -53,4 +53,9 @@
     <string name="settings_token_error">Could not get token. Check your connection and try again.</string>
     <string name="settings_copy_token">Copy</string>
     <string name="settings_token_retry">Retry</string>
+    <string name="movie_error_forbidden">You do not have permission to access this movie resource.</string>
+    <string name="movie_error_not_found">The requested movie resource was not found.</string>
+    <string name="movie_error_rate_limited">Too many requests. Please wait and try again.</string>
+    <string name="movie_error_timeout">The request timed out. Please try again.</string>
+    <string name="movie_error_server">The movie service is temporarily unavailable. Please try again later.</string>
 </resources>

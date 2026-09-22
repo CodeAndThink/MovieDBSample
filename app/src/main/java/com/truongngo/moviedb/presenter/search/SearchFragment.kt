@@ -17,6 +17,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.truongngo.moviedb.presenter.common.messageResource
 import com.truongngo.moviedb.R
 import com.truongngo.moviedb.databinding.FragmentSearchBinding
 import com.truongngo.moviedb.presenter.navigation.AppDestination
@@ -94,11 +95,11 @@ class SearchFragment : Fragment() {
         binding.clear.isVisible = state.query.isNotEmpty()
         binding.loading.isVisible = state.isLoading && state.movies.isEmpty()
         binding.moreLoading.isVisible = state.isLoading && state.movies.isNotEmpty()
-        binding.retry.isVisible = state.error
-        binding.status.isVisible = !state.isLoading && (state.movies.isEmpty() || state.error)
+        binding.retry.isVisible = state.error != null && !state.isLoading
+        binding.status.isVisible = !state.isLoading && (state.movies.isEmpty() || state.error != null)
         binding.status.setText(when {
             state.query.isBlank() -> R.string.search_prompt
-            state.error -> R.string.home_error_general
+            state.error != null -> state.error.messageResource()
             else -> R.string.search_empty
         })
     }

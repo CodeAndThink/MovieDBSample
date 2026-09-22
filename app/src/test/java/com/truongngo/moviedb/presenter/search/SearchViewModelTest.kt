@@ -1,6 +1,8 @@
 package com.truongngo.moviedb.presenter.search
 
 import androidx.lifecycle.SavedStateHandle
+import com.truongngo.moviedb.domain.model.MovieLoadError
+import com.truongngo.moviedb.data.network.NetworkException
 import com.truongngo.moviedb.data.network.ApiClients
 import com.truongngo.moviedb.data.network.model.*
 import kotlinx.coroutines.*
@@ -64,13 +66,37 @@ class SearchViewModelTest {
         api.search = { _, _ -> throw IOException("offline") }
         vm.onEvent(SearchEvent.LoadMore)
         runCurrent()
-        assertTrue(vm.stateFlow.value.error)
+        assertEquals(MovieLoadError.CONNECTION, vm.stateFlow.value.error)
         assertEquals(1, vm.stateFlow.value.movies.size)
         api.search = { _, p -> page(p, listOf(1, 2)) }
         vm.onEvent(SearchEvent.Retry)
         runCurrent()
         assertEquals(listOf("movie" to 1, "movie" to 2, "movie" to 2), api.calls)
         assertEquals(listOf(1, 2), vm.stateFlow.value.movies.map { it.id })
+        assertNull(vm.stateFlow.value.error)
+    }
+
+    @Test fun httpFailureKeepsItsCategoryInState() = runTest(dispatcher) {
+        api.search = { _, _ -> throw NetworkException(500, null, null) }
+        val vm = SearchViewModel(api, SavedStateHandle(mapOf("query" to "movie")))
+        advanceUntilIdle()
+        assertEquals(MovieLoadError.SERVER, vm.stateFlow.value.error)
+    }
+
+    @Test fun staleFailureCannotReplaceSuccessfulNewQuery() = runTest(dispatcher) {
+        val pending = CompletableDeferred<MoviePage>()
+        api.search = { q, p -> if (q == "old") withContext(NonCancellable) { pending.await() } else page(p, listOf(2)) }
+        val vm = SearchViewModel(api, SavedStateHandle(mapOf("query" to "old")))
+        advanceTimeBy(500)
+        runCurrent()
+        vm.onEvent(SearchEvent.QueryChanged("new"))
+        advanceTimeBy(500)
+        runCurrent()
+        pending.completeExceptionally(NetworkException(500, null, null))
+        runCurrent()
+        assertEquals(listOf(2), vm.stateFlow.value.movies.map { it.id })
+        assertNull(vm.stateFlow.value.error)
+        assertFalse(vm.stateFlow.value.isLoading)
     }
 
     private class FakeApi : ApiClients {

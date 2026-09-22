@@ -79,8 +79,14 @@ class MovieRepositoryImplTest {
         for ((exception, error) in listOf(
             IOException("offline") to MovieLoadError.CONNECTION,
             NetworkException(401, null, null) to MovieLoadError.AUTHENTICATION,
-            NetworkException(403, null, null) to MovieLoadError.AUTHENTICATION,
-            NetworkException(500, null, null) to MovieLoadError.GENERAL,
+            NetworkException(403, null, null) to MovieLoadError.FORBIDDEN,
+            NetworkException(500, null, null) to MovieLoadError.SERVER,
+            NetworkException(404, null, null) to MovieLoadError.NOT_FOUND,
+            NetworkException(429, null, null, "10") to MovieLoadError.RATE_LIMITED,
+            NetworkException(503, null, null) to MovieLoadError.SERVER,
+            NetworkException(599, null, null) to MovieLoadError.SERVER,
+            NetworkException(400, null, null) to MovieLoadError.GENERAL,
+            java.net.SocketTimeoutException() to MovieLoadError.TIMEOUT,
             IllegalStateException() to MovieLoadError.GENERAL,
         )) {
             api.popular = { throw exception }
@@ -123,6 +129,12 @@ class MovieRepositoryImplTest {
             if (fail) error("disk unavailable")
             pages[key] = CachedHomePage(page, System.currentTimeMillis())
         }
+    }
+
+    @Test fun serverFailureIsDistinctFromConnectionFailure() = runTest {
+        api.popular = { throw NetworkException(500, null, null) }
+        val result = repository.loadHomeMovies(HomeFeed.POPULAR, 1, HomeLoadMode.FORCE_REFRESH).single() as MovieLoadResult.Error
+        assertEquals(MovieLoadError.SERVER, result.reason)
     }
 
     private class FakeApi : ApiClients {

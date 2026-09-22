@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.truongngo.moviedb.domain.model.HomeFeed
 import com.truongngo.moviedb.domain.model.HomeLoadMode
 import com.truongngo.moviedb.domain.model.HomeMoviePage
-import com.truongngo.moviedb.domain.model.MovieLoadError
 import com.truongngo.moviedb.domain.model.MovieLoadResult
 import com.truongngo.moviedb.domain.usecase.LoadHomeMoviesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,9 +12,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -87,7 +84,7 @@ class HomeViewModel @Inject constructor(private val loadHomeMovies: LoadHomeMovi
                         isNowPlayingLoading = result.isRefreshing, nowPlayingError = null)
                 }
                 is MovieLoadResult.Error -> _stateFlow.update {
-                    it.copy(isNowPlayingLoading = false, nowPlayingError = result.reason.toHomeError())
+                    it.copy(isNowPlayingLoading = false, nowPlayingError = result.reason)
                 }
             }
         }
@@ -117,7 +114,7 @@ class HomeViewModel @Inject constructor(private val loadHomeMovies: LoadHomeMovi
                 is MovieLoadResult.Data -> applyPage(section, result.page, loading = result.isRefreshing)
                 is MovieLoadResult.Error -> updateSection(section) {
                     // Keep content and retry the requested page, including failed page-one refreshes.
-                    it.copy(isLoading = false, error = result.reason.toHomeError(), retryPage = page)
+                    it.copy(isLoading = false, error = result.reason, retryPage = page)
                 }
             }
         }
@@ -141,11 +138,5 @@ class HomeViewModel @Inject constructor(private val loadHomeMovies: LoadHomeMovi
 
     private fun updateSection(section: MovieSection, transform: (MovieSectionState) -> MovieSectionState) {
         _stateFlow.update { it.copy(sections = it.sections + (section to transform(it.sections.getValue(section)))) }
-    }
-
-    private fun MovieLoadError.toHomeError(): HomeError = when (this) {
-        MovieLoadError.AUTHENTICATION -> HomeError.AUTHENTICATION
-        MovieLoadError.CONNECTION -> HomeError.CONNECTION
-        MovieLoadError.GENERAL -> HomeError.GENERAL
     }
 }

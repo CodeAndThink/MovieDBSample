@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.truongngo.moviedb.data.network.ApiClients
+import com.truongngo.moviedb.data.network.NetworkErrorMapper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -35,8 +36,8 @@ class SearchViewModel @Inject constructor(
             is SearchEvent.MovieClicked -> if (event.movieId > 0) effects.trySend(SearchEffect.NavigateDetail(event.movieId))
             SearchEvent.BackClicked -> effects.trySend(SearchEffect.NavigateBack)
             SearchEvent.Submit -> if (state.value.query.isNotBlank() && state.value.page == 0) request(1, 0)
-            SearchEvent.Retry -> if (!state.value.isLoading && state.value.error) request(state.value.page + 1, 0)
-            SearchEvent.LoadMore -> if (!state.value.isLoading && !state.value.error && state.value.canLoadMore) request(state.value.page + 1, 0)
+            SearchEvent.Retry -> if (!state.value.isLoading && state.value.error != null) request(state.value.page + 1, 0)
+            SearchEvent.LoadMore -> if (!state.value.isLoading && state.value.error == null && state.value.canLoadMore) request(state.value.page + 1, 0)
         }
     }
 
@@ -57,7 +58,7 @@ class SearchViewModel @Inject constructor(
         if (query.isEmpty()) return
         val version = ++generation
         job?.cancel()
-        state.value = state.value.copy(isLoading = true, error = false)
+        state.value = state.value.copy(isLoading = true, error = null)
         job = viewModelScope.launch {
             try {
                 delay(waitMs)
@@ -71,7 +72,7 @@ class SearchViewModel @Inject constructor(
             } catch (exception: CancellationException) {
                 throw exception
             } catch (exception: Exception) {
-                if (version == generation) state.value = state.value.copy(isLoading = false, error = true)
+                if (version == generation) state.value = state.value.copy(isLoading = false, error = NetworkErrorMapper.toMovieLoadError(exception))
             }
         }
     }

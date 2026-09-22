@@ -1,5 +1,6 @@
 package com.truongngo.moviedb.presenter.home
 
+import com.truongngo.moviedb.domain.model.MovieLoadError
 import com.truongngo.moviedb.domain.usecase.LoadHomeMoviesUseCase
 import com.truongngo.moviedb.data.repository.MovieRepositoryImpl
 import com.truongngo.moviedb.data.local.home.HomeCache
@@ -54,7 +55,7 @@ class HomeCacheIntegrationTest {
         pending.completeExceptionally(IOException("offline"))
         runCurrent()
         assertEquals(listOf(42), vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).movies.map { it.id })
-        assertEquals(HomeError.CONNECTION, vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).error)
+        assertEquals(MovieLoadError.CONNECTION, vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).error)
     }
 
     @Test fun manualRefreshBypassesFreshCacheAndPersistsReplacement() = runTest(dispatcher) {
@@ -110,7 +111,7 @@ class HomeCacheIntegrationTest {
         pending.completeExceptionally(IOException("offline"))
         runCurrent()
         assertEquals(listOf(42) + (1..9).toList(), vm.stateFlow.value.nowPlaying.map { it.id })
-        assertEquals(HomeError.CONNECTION, vm.stateFlow.value.nowPlayingError)
+        assertEquals(MovieLoadError.CONNECTION, vm.stateFlow.value.nowPlayingError)
         api.nowPlaying = { page(1, listOf(77)) }
         vm.onEvent(HomeEvent.RetryNowPlaying)
         runCurrent()

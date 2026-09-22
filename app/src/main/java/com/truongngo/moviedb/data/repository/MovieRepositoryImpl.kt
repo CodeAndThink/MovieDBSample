@@ -4,10 +4,9 @@ import com.truongngo.moviedb.data.local.home.HomeCache
 import com.truongngo.moviedb.data.local.model.HomeCacheKey
 import com.truongngo.moviedb.data.mapper.toHomeMoviePage
 import com.truongngo.moviedb.data.network.ApiClients
-import com.truongngo.moviedb.data.network.NetworkException
+import com.truongngo.moviedb.data.network.NetworkErrorMapper
 import com.truongngo.moviedb.domain.model.HomeFeed
 import com.truongngo.moviedb.domain.model.HomeLoadMode
-import com.truongngo.moviedb.domain.model.MovieLoadError
 import com.truongngo.moviedb.domain.model.MovieLoadResult
 import com.truongngo.moviedb.domain.repository.MovieRepository
 import kotlinx.coroutines.CancellationException
@@ -16,7 +15,6 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
-import java.io.IOException
 import javax.inject.Inject
 
 class MovieRepositoryImpl @Inject constructor(
@@ -46,12 +44,7 @@ class MovieRepositoryImpl @Inject constructor(
     }.catch { exception ->
         if (exception is CancellationException) throw exception
         currentCoroutineContext().ensureActive()
-        val error = when {
-            exception is NetworkException && exception.httpCode in listOf(401, 403) -> MovieLoadError.AUTHENTICATION
-            exception is NetworkException -> MovieLoadError.GENERAL
-            exception is IOException -> MovieLoadError.CONNECTION
-            else -> MovieLoadError.GENERAL
-        }
+        val error = NetworkErrorMapper.toMovieLoadError(exception)
         emit(MovieLoadResult.Error(error))
     }
 

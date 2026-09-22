@@ -22,6 +22,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.truongngo.moviedb.presenter.common.PermissionManager
 import com.truongngo.moviedb.presenter.common.PermissionMessages
 import com.truongngo.moviedb.presenter.common.RuntimePermission
+import com.truongngo.moviedb.presenter.common.messageResource
+import com.truongngo.moviedb.domain.model.MovieLoadError
 import com.truongngo.moviedb.R
 import com.truongngo.moviedb.data.network.utils.NetworkUtils
 import com.truongngo.moviedb.databinding.FragmentDetailBinding
@@ -117,13 +119,8 @@ class DetailFragment : Fragment() {
         content.isVisible = state.movie != null
         share.isVisible = state.movie?.let { it.id > 0 || it.title.isNotBlank() } == true
         status.isVisible = state.error != null
-        retry.isVisible = state.error != null && state.error != DetailError.INVALID_MOVIE
-        status.setText(when (state.error) {
-            DetailError.CONNECTION -> R.string.home_error_connection
-            DetailError.AUTHENTICATION -> R.string.home_error_auth
-            DetailError.INVALID_MOVIE -> R.string.detail_invalid_movie
-            else -> R.string.home_error_general
-        })
+        retry.isVisible = state.error != null && state.error != MovieLoadError.INVALID_MOVIE
+        status.setText(state.error?.messageResource() ?: R.string.home_error_general)
         state.movie?.let { movie ->
             title.text = movie.title
             originalTitle.text = movie.originalTitle

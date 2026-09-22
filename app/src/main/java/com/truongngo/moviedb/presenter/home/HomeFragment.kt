@@ -16,6 +16,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
+import com.truongngo.moviedb.presenter.common.messageResource
 import com.truongngo.moviedb.R
 import com.truongngo.moviedb.databinding.FragmentHomeBinding
 import com.truongngo.moviedb.databinding.LayoutHomeSectionBinding
@@ -163,12 +164,6 @@ class HomeFragment : Fragment() {
         val count = bannerAdapter?.movies?.size ?: 0
         views.pageIndicator.isVisible = count > 0
         if (count > 0) views.pageIndicator.text = getString(R.string.home_page, bannerIndex + 1, count)
-    }
-
-    private fun HomeError.messageResource() = when (this) {
-        HomeError.CONNECTION -> R.string.home_error_connection
-        HomeError.AUTHENTICATION -> R.string.home_error_auth
-        HomeError.GENERAL -> R.string.home_error_general
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

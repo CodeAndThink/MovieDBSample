@@ -3,6 +3,7 @@
 - Luồng: SearchFragment → SearchEvent → SearchViewModel → ApiClients; SearchState/SearchEffect.
 - Debounce 500 ms; query blank không gọi API; gửi query.trim(). Giữ cancel + generation chống response cũ.
 - Query mới reset danh sách; pagination distinct ID, tối đa min(totalPages, 500). Lỗi giữ trang cũ; retry page + 1.
+- State.error là MovieLoadError? qua NetworkErrorMapper; null nghĩa là không lỗi. UI dùng mapper message chung ở presenter/common; lỗi TMDB không logout Firebase.
 - SavedStateHandle chỉ lưu query, không lưu kết quả. Sau process death phải tải lại.
 - Root destination; Detail phải giữ Search bên dưới để Back về query/kết quả hiện tại.
 - Test: SearchViewModelTest; debounce, stale response, retry, query restore.
