@@ -29,11 +29,9 @@
     <string name="home_top_rated">Top Rated</string>
     <string name="home_upcoming">Upcoming</string>
     <string name="home_retry">Try again</string>
-    <string name="home_load_more">Load more</string>
     <string name="home_loading">Loading movies…</string>
     <string name="home_empty">No movies available yet.</string>
     <string name="home_end">You’ve seen all movies in this list.</string>
-    <string name="home_swipe_more">Swipe for more movies</string>
     <string name="home_error_connection">Couldn’t connect. Check your internet and try again.</string>
     <string name="home_error_auth">Movie service authentication failed.</string>
     <string name="home_error_general">Couldn’t load movies. Please try again.</string>
@@ -53,4 +51,7 @@
     <string name="settings_token_error">Could not get token. Check your connection and try again.</string>
     <string name="settings_copy_token">Copy</string>
     <string name="settings_token_retry">Retry</string>
+    <string name="home_see_more">See more</string>
+    <string name="home_see_more_category">See more %1$s movies</string>
+    <string name="movie_list_title">Movies</string>
 </resources>

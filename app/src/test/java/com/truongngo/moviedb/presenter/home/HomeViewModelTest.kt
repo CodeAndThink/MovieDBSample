@@ -1,5 +1,6 @@
 package com.truongngo.moviedb.presenter.home
 
+import androidx.paging.PagingData
 import com.truongngo.moviedb.domain.model.*
 import com.truongngo.moviedb.domain.repository.MovieRepository
 import com.truongngo.moviedb.domain.usecase.LoadHomeMoviesUseCase
@@ -19,101 +20,48 @@ class HomeViewModelTest {
     @After fun teardown() { Dispatchers.resetMain() }
     private fun viewModel() = HomeViewModel(LoadHomeMoviesUseCase(repository))
 
-    @Test fun loadsSectionsIndependentlyAndLimitsBannerToTen() = runTest(dispatcher) {
-        repository.topRated = { flowOf(MovieLoadResult.Error(MovieLoadError.CONNECTION)) }
+    @Test fun initializesOnlyBannerOutsidePaging() = runTest(dispatcher) {
         val vm = viewModel()
         runCurrent()
         assertEquals(10, vm.stateFlow.value.nowPlaying.size)
-        assertEquals(2, vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).movies.size)
-        assertEquals(HomeError.CONNECTION, vm.stateFlow.value.sections.getValue(MovieSection.TOP_RATED).error)
-        assertFalse(vm.stateFlow.value.isRefreshing)
-        assertEquals(4, repository.modes.size)
-        assertTrue(repository.modes.all { it == HomeLoadMode.CACHE_FIRST })
+        assertTrue(repository.popularCalls.isEmpty())
+        assertEquals(listOf(HomeLoadMode.CACHE_FIRST), repository.modes)
     }
 
-    @Test fun duplicateLoadMoreIsBlockedAndResultsAreDeduplicated() = runTest(dispatcher) {
+    @Test fun homeLimitsEverySectionToTenAndNeverCreatesPager() = runTest(dispatcher) {
         val vm = viewModel()
         runCurrent()
-        val pending = CompletableDeferred<HomeMoviePage>()
-        repository.popular = { flow { emit(MovieLoadResult.Data(pending.await())) } }
-        vm.onEvent(HomeEvent.LoadMore(MovieSection.POPULAR))
-        vm.onEvent(HomeEvent.LoadMore(MovieSection.POPULAR))
-        runCurrent()
-        assertEquals(listOf(1, 2), repository.popularCalls)
-        pending.complete(page(2, listOf(2, 3), total = 2))
-        runCurrent()
-        val state = vm.stateFlow.value.sections.getValue(MovieSection.POPULAR)
-        assertEquals(listOf(1, 2, 3), state.movies.map { it.id })
-        assertFalse(state.canLoadMore)
-        vm.onEvent(HomeEvent.LoadMore(MovieSection.POPULAR))
-        runCurrent()
-        assertEquals(listOf(1, 2), repository.popularCalls)
+        assertEquals(0, repository.pagerCalls)
+        MovieSection.entries.forEach { assertEquals(10, vm.stateFlow.value.sections.getValue(it).movies.size) }
+        assertEquals(3, repository.refreshes.size)
+        assertTrue(repository.refreshes.none { it.second })
     }
 
-    @Test fun failedPageKeepsContentAndRetriesTheSamePage() = runTest(dispatcher) {
+    @Test fun retryRestartsPreviewObservationAfterDatabaseReadFailure() = runTest(dispatcher) {
+        repository.failPreview = true
         val vm = viewModel()
         runCurrent()
-        repository.popular = { flowOf(MovieLoadResult.Error(MovieLoadError.CONNECTION)) }
-        vm.onEvent(HomeEvent.LoadMore(MovieSection.POPULAR))
-        runCurrent()
-        assertEquals(2, vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).movies.size)
-        vm.onEvent(HomeEvent.LoadMore(MovieSection.POPULAR))
-        runCurrent()
-        assertEquals(listOf(1, 2), repository.popularCalls)
-        repository.popular = { flowOf(MovieLoadResult.Data(page(it, listOf(3, 4)))) }
+        assertEquals(HomeError.GENERAL, vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).error)
+        repository.failPreview = false
         vm.onEvent(HomeEvent.RetrySection(MovieSection.POPULAR))
         runCurrent()
-        assertEquals(listOf(1, 2, 2), repository.popularCalls)
-        assertEquals(HomeLoadMode.FORCE_REFRESH, repository.modes.last())
+        assertEquals(10, vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).movies.size)
         assertNull(vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).error)
     }
 
-    @Test fun refreshDiscardsStaleLoadMoreEvenIfItIgnoresCancellation() = runTest(dispatcher) {
+    @Test fun seeMoreCarriesTheSelectedFeed() = runTest(dispatcher) {
         val vm = viewModel()
-        runCurrent()
-        val pending = CompletableDeferred<HomeMoviePage>()
-        // Deliberately non-cooperative upstream proves the ViewModel generation guard independently.
-        repository.popular = { object : Flow<MovieLoadResult> {
-            override suspend fun collect(collector: FlowCollector<MovieLoadResult>) {
-                withContext(NonCancellable) { collector.emit(MovieLoadResult.Data(pending.await())) }
-            }
-        } }
-        vm.onEvent(HomeEvent.LoadMore(MovieSection.POPULAR))
-        runCurrent()
-        repository.popular = { flowOf(MovieLoadResult.Data(page(1, listOf(99)))) }
-        vm.onEvent(HomeEvent.Refresh)
-        runCurrent()
-        pending.complete(page(2, listOf(88)))
-        runCurrent()
-        val state = vm.stateFlow.value.sections.getValue(MovieSection.POPULAR)
-        assertEquals(listOf(99), state.movies.map { it.id })
-        assertEquals(1, state.page)
+        vm.onEvent(HomeEvent.SeeMoreClicked(MovieSection.TOP_RATED))
+        assertEquals(HomeEffect.NavigateMovieList(HomeFeed.TOP_RATED), vm.effectFlow.first())
     }
 
-    @Test fun refreshFailureRetriesFirstPageInsteadOfAppending() = runTest(dispatcher) {
+    @Test fun refreshBypassesCacheAndBlocksDuplicateBannerRequests() = runTest(dispatcher) {
         val vm = viewModel()
         runCurrent()
-        vm.onEvent(HomeEvent.LoadMore(MovieSection.POPULAR))
-        runCurrent()
-        repository.popular = { flowOf(MovieLoadResult.Error(MovieLoadError.CONNECTION)) }
+        vm.onEvent(HomeEvent.Refresh)
         vm.onEvent(HomeEvent.Refresh)
         runCurrent()
-        assertEquals(2, vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).page)
-        assertTrue(repository.modes.takeLast(4).all { it == HomeLoadMode.FORCE_REFRESH })
-        repository.popular = { flowOf(MovieLoadResult.Data(page(it, listOf(77)))) }
-        vm.onEvent(HomeEvent.RetrySection(MovieSection.POPULAR))
-        runCurrent()
-        assertEquals(listOf(77), vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).movies.map { it.id })
-        assertEquals(listOf(1, 2, 1, 1), repository.popularCalls)
-    }
-
-    @Test fun emptyResponseStopsPaginationAndRefreshDoesNotDuplicateRequests() = runTest(dispatcher) {
-        repository.popular = { flowOf(MovieLoadResult.Data(page(it, emptyList()))) }
-        val vm = viewModel()
-        vm.onEvent(HomeEvent.Refresh)
-        runCurrent()
-        assertFalse(vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).canLoadMore)
-        assertEquals(listOf(1), repository.popularCalls)
+        assertEquals(listOf(HomeLoadMode.CACHE_FIRST, HomeLoadMode.FORCE_REFRESH), repository.modes)
     }
 
     @Test fun bannerWrapsBothDirectionsIncludingSmallLists() {
@@ -128,6 +76,21 @@ class HomeViewModelTest {
     }
 
     private class FakeRepository : MovieRepository {
+        var pagerCalls = 0
+        val refreshes = mutableListOf<Pair<HomeFeed, Boolean>>()
+        override fun pagedHomeMovies(feed: HomeFeed): Flow<PagingData<HomeMovie>> {
+            pagerCalls++
+            return flowOf(PagingData.empty())
+        }
+        var failPreview = false
+        override fun observeHomePreview(feed: HomeFeed) = flow {
+            if (failPreview) error("database unavailable")
+            emit((1..20).map { HomeMovie(it, "Movie $it", null, null, null, 8.0) })
+        }
+        override suspend fun refreshHomePreview(feed: HomeFeed, force: Boolean): MovieLoadError? {
+            refreshes += feed to force
+            return null
+        }
         val popularCalls = mutableListOf<Int>()
         val modes = mutableListOf<HomeLoadMode>()
         var popular: (Int) -> Flow<MovieLoadResult> = { flowOf(MovieLoadResult.Data(page(it, listOf(1, 2)))) }

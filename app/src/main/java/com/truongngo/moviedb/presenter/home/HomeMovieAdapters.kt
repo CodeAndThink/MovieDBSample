@@ -5,6 +5,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
+import com.truongngo.moviedb.databinding.ItemHomeSeeMoreBinding
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.truongngo.moviedb.R
@@ -95,4 +96,16 @@ private fun TextView.bindMetadata(movie: HomeMovie) {
     val year = movie.releaseDate?.take(4)?.takeIf { it.isNotBlank() }
         ?: context.getString(R.string.home_unknown_year)
     text = context.getString(R.string.home_movie_metadata, movie.voteAverage, year)
+}
+
+/** A permanent final item, independent of how many preview movies are cached. */
+class HomeSeeMoreAdapter(private val description: String, private val onClick: () -> Unit) : RecyclerView.Adapter<HomeSeeMoreAdapter.Holder>() {
+    class Holder(val binding: ItemHomeSeeMoreBinding) : RecyclerView.ViewHolder(binding.root)
+    override fun getItemCount() = 1
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = Holder(
+        ItemHomeSeeMoreBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+    override fun onBindViewHolder(holder: Holder, position: Int) {
+        holder.binding.seeMore.contentDescription = description
+        holder.binding.seeMore.setOnClickListener { onClick() }
+    }
 }

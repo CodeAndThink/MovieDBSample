@@ -13,4 +13,7 @@
             <argument android:name="movieId" app:argType="integer" />
         </fragment>
     <fragment android:id="@+id/search" android:name="com.truongngo.moviedb.presenter.search.SearchFragment" android:label="@string/search_hint" />
+    <fragment android:id="@+id/movie_list" android:name="com.truongngo.moviedb.presenter.movielist.MovieListFragment" android:label="@string/movie_list_title">
+        <argument android:name="feed" app:argType="string" />
+    </fragment>
 </navigation>

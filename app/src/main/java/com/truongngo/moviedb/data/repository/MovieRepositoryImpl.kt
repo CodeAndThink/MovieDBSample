@@ -1,5 +1,14 @@
 package com.truongngo.moviedb.data.repository
 
+import androidx.paging.*
+import kotlinx.coroutines.sync.Mutex
+import java.util.concurrent.ConcurrentHashMap
+import com.truongngo.moviedb.data.local.database.dao.HomePagingDao
+import com.truongngo.moviedb.data.paging.HomeRemoteMediator
+import com.truongngo.moviedb.data.mapper.toMovie
+import com.truongngo.moviedb.data.mapper.toHomeMovie
+import com.truongngo.moviedb.domain.model.HomeMovie
+import kotlinx.coroutines.flow.map
 import com.truongngo.moviedb.data.local.home.HomeCache
 import com.truongngo.moviedb.data.local.model.HomeCacheKey
 import com.truongngo.moviedb.data.mapper.toHomeMoviePage
@@ -22,7 +31,37 @@ import javax.inject.Inject
 class MovieRepositoryImpl @Inject constructor(
     private val api: ApiClients,
     private val cache: HomeCache,
+    private val pagingDao: HomePagingDao,
 ) : MovieRepository {
+    private val feedLocks = ConcurrentHashMap<HomeCacheKey, Mutex>()
+    private fun mediator(key: HomeCacheKey) = HomeRemoteMediator(api, pagingDao, key, feedLocks.computeIfAbsent(key) { Mutex() })
+
+    override fun observeHomePreview(feed: HomeFeed): Flow<List<HomeMovie>> {
+        val key = HomeCacheKey(feed.name)
+        return pagingDao.observePreview(key.feed, key.language, key.region)
+            .map { rows -> rows.map { it.movie.toMovie().toHomeMovie() } }
+    }
+
+    @OptIn(ExperimentalPagingApi::class)
+    override suspend fun refreshHomePreview(feed: HomeFeed, force: Boolean): MovieLoadError? {
+        val mediator = mediator(HomeCacheKey(feed.name))
+        if (!force && mediator.initialize() == RemoteMediator.InitializeAction.SKIP_INITIAL_REFRESH) return null
+        val result = mediator.load(LoadType.REFRESH, PagingState(emptyList(), null, PagingConfig(20), 0))
+        return (result as? RemoteMediator.MediatorResult.Error)?.let {
+            (it.throwable as? com.truongngo.moviedb.domain.model.MoviePagingException)?.reason ?: MovieLoadError.GENERAL
+        }
+    }
+
+    @OptIn(ExperimentalPagingApi::class)
+    override fun pagedHomeMovies(feed: HomeFeed): Flow<PagingData<HomeMovie>> {
+        val key = HomeCacheKey(feed.name)
+        return Pager(
+            config = PagingConfig(pageSize = 20, initialLoadSize = 20, prefetchDistance = 4, enablePlaceholders = false),
+            remoteMediator = mediator(key),
+            pagingSourceFactory = { pagingDao.pagingSource(key.feed, key.language, key.region) },
+        ).flow.map { paging -> paging.map { it.movie.toMovie().toHomeMovie() } }
+    }
+
     override fun loadHomeMovies(feed: HomeFeed, page: Int, mode: HomeLoadMode): Flow<MovieLoadResult> = flow<MovieLoadResult> {
         val key = HomeCacheKey(feed.name)
         if (page == 1 && mode == HomeLoadMode.CACHE_FIRST) {

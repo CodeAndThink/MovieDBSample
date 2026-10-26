@@ -1,4 +1,5 @@
 [versions]
+paging = "3.4.2"
 room = "2.8.4"
 agp = "9.3.2"
 coil = "2.7.0"
@@ -30,6 +31,9 @@ viewpager2 = "1.0.0"
 workRuntimeKtx = "2.10.1"
 
 [libraries]
+androidx-paging-runtime = { module = "androidx.paging:paging-runtime", version.ref = "paging" }
+androidx-paging-testing = { module = "androidx.paging:paging-testing", version.ref = "paging" }
+androidx-room-paging = { module = "androidx.room:room-paging", version.ref = "room" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 androidx-security-crypto = { module = "androidx.security:security-crypto", version = "1.1.0" }

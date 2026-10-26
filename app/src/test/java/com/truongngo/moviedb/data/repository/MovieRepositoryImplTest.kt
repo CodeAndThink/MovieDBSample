@@ -18,7 +18,7 @@ import java.io.IOException
 class MovieRepositoryImplTest {
     private val api = FakeApi()
     private val cache = FakeCache()
-    private val repository = MovieRepositoryImpl(api, cache)
+    private val repository = MovieRepositoryImpl(api, cache, com.truongngo.moviedb.data.paging.MemoryPagingDao())
 
     @Test fun freshPagesSkipNetworkForEveryFeedIncludingEmptyPages() = runTest {
         for (feed in HomeFeed.entries) {
