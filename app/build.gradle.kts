@@ -107,4 +107,7 @@ dependencies {
     implementation(libs.firebase.auth)
     implementation(libs.firebase.messaging)
     implementation(libs.kotlinx.coroutines.play.services)
+
+    // Chỉ định debugImplementation để thư viện không xuất hiện trong bản release
+    debugImplementation(libs.leakcanary.android)
 }
