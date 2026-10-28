@@ -1,13 +1,11 @@
 package com.truongngo.moviedb.presenter.home
 
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.catch
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.truongngo.moviedb.domain.model.HomeFeed
 import com.truongngo.moviedb.domain.model.HomeLoadMode
-import com.truongngo.moviedb.domain.model.HomeMoviePage
 import com.truongngo.moviedb.domain.model.MovieLoadError
 import com.truongngo.moviedb.domain.model.MovieLoadResult
 import com.truongngo.moviedb.domain.usecase.LoadHomeMoviesUseCase
@@ -48,7 +46,7 @@ class HomeViewModel @Inject constructor(private val loadHomeMovies: LoadHomeMovi
                 .catch { error ->
                     if (error is CancellationException) throw error
                     observationErrors.add(section)
-                    updateSection(section) { it.copy(error = HomeError.GENERAL, isLoading = false) }
+                    updateSection(section) { it.copy(error = MovieLoadError.GENERAL, isLoading = false) }
                 }.collect { movies ->
                     updateSection(section) { it.copy(movies = movies.distinctBy { movie -> movie.id }.take(10)) }
                 }
@@ -97,7 +95,7 @@ class HomeViewModel @Inject constructor(private val loadHomeMovies: LoadHomeMovi
 
     private suspend fun fetchSection(section: MovieSection, currentGeneration: Int, force: Boolean) {
         val error = loadHomeMovies.refreshPreview(HomeFeed.valueOf(section.name), force)
-        if (generation == currentGeneration) updateSection(section) { it.copy(isLoading = false, error = error?.toHomeError() ?: if (section in observationErrors) HomeError.GENERAL else null) }
+        if (generation == currentGeneration) updateSection(section) { it.copy(isLoading = false, error = error ?: if (section in observationErrors) MovieLoadError.GENERAL else null) }
     }
 
     private fun updateSection(section: MovieSection, transform: (HomeSectionState) -> HomeSectionState) {
@@ -129,9 +127,4 @@ class HomeViewModel @Inject constructor(private val loadHomeMovies: LoadHomeMovi
     private fun loadMode(useCache: Boolean) =
         if (useCache) HomeLoadMode.CACHE_FIRST else HomeLoadMode.FORCE_REFRESH
 
-    private fun MovieLoadError.toHomeError(): HomeError = when (this) {
-        MovieLoadError.AUTHENTICATION -> HomeError.AUTHENTICATION
-        MovieLoadError.CONNECTION -> HomeError.CONNECTION
-        MovieLoadError.GENERAL -> HomeError.GENERAL
-    }
 }

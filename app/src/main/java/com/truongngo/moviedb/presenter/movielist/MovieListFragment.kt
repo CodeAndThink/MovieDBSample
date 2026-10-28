@@ -19,6 +19,7 @@ import com.truongngo.moviedb.databinding.FragmentMovieListBinding
 import com.truongngo.moviedb.domain.model.HomeFeed
 import com.truongngo.moviedb.domain.model.MovieLoadError
 import com.truongngo.moviedb.domain.model.MoviePagingException
+import com.truongngo.moviedb.presenter.common.messageResource
 import com.truongngo.moviedb.presenter.navigation.AppDestination
 import com.truongngo.moviedb.presenter.navigation.NavigationViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -80,11 +81,8 @@ class MovieListFragment : Fragment() {
         binding.moreLoading.isVisible = states.append is LoadState.Loading
         binding.retry.isVisible = error != null && !refreshing
         binding.status.isVisible = error != null || (empty && !refreshing)
-        binding.status.setText(if (error == null) R.string.home_empty else when ((error.error as? MoviePagingException)?.reason) {
-            MovieLoadError.CONNECTION -> R.string.home_error_connection
-            MovieLoadError.AUTHENTICATION -> R.string.home_error_auth
-            else -> R.string.home_error_general
-        })
+        val reason = (error?.error as? MoviePagingException)?.reason ?: MovieLoadError.GENERAL
+        binding.status.setText(if (error == null) R.string.home_empty else reason.messageResource())
     }
 
     override fun onDestroyView() {

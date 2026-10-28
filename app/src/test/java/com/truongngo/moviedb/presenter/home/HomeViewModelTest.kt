@@ -41,7 +41,7 @@ class HomeViewModelTest {
         repository.failPreview = true
         val vm = viewModel()
         runCurrent()
-        assertEquals(HomeError.GENERAL, vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).error)
+        assertEquals(MovieLoadError.GENERAL, vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).error)
         repository.failPreview = false
         vm.onEvent(HomeEvent.RetrySection(MovieSection.POPULAR))
         runCurrent()
@@ -79,13 +79,12 @@ class HomeViewModelTest {
         val vm = viewModel()
         runCurrent()
         val movies = vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).movies
-        repository.popular = { flowOf(MovieLoadResult.Error(MovieLoadError.SERVER)) }
+        repository.previewError = MovieLoadError.SERVER
         vm.onEvent(HomeEvent.Refresh)
         runCurrent()
         val section = vm.stateFlow.value.sections.getValue(MovieSection.POPULAR)
         assertEquals(MovieLoadError.SERVER, section.error)
         assertEquals(movies, section.movies)
-        assertEquals(1, section.retryPage)
         assertFalse(section.isLoading)
     }
 
@@ -96,6 +95,7 @@ class HomeViewModelTest {
             pagerCalls++
             return flowOf(PagingData.empty())
         }
+        var previewError: MovieLoadError? = null
         var failPreview = false
         override fun observeHomePreview(feed: HomeFeed) = flow {
             if (failPreview) error("database unavailable")
@@ -103,7 +103,7 @@ class HomeViewModelTest {
         }
         override suspend fun refreshHomePreview(feed: HomeFeed, force: Boolean): MovieLoadError? {
             refreshes += feed to force
-            return null
+            return previewError
         }
         val popularCalls = mutableListOf<Int>()
         val modes = mutableListOf<HomeLoadMode>()

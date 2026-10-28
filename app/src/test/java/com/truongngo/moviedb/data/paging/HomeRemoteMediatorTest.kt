@@ -81,7 +81,10 @@ class HomeRemoteMediatorTest {
 
     @Test fun httpFailuresKeepTheirDomainClassification() = runTest {
         for ((code, expected) in listOf(401 to com.truongngo.moviedb.domain.model.MovieLoadError.AUTHENTICATION,
-            500 to com.truongngo.moviedb.domain.model.MovieLoadError.GENERAL)) {
+            403 to com.truongngo.moviedb.domain.model.MovieLoadError.FORBIDDEN,
+            404 to com.truongngo.moviedb.domain.model.MovieLoadError.NOT_FOUND,
+            429 to com.truongngo.moviedb.domain.model.MovieLoadError.RATE_LIMITED,
+            500 to com.truongngo.moviedb.domain.model.MovieLoadError.SERVER)) {
             api.popular = { throw com.truongngo.moviedb.data.network.NetworkException(code, null, null) }
             val result = mediator().load(LoadType.REFRESH, state) as RemoteMediator.MediatorResult.Error
             assertEquals(expected, (result.throwable as com.truongngo.moviedb.domain.model.MoviePagingException).reason)

@@ -16,6 +16,7 @@ import com.truongngo.moviedb.data.network.ApiClients
 import com.truongngo.moviedb.data.network.NetworkErrorMapper
 import com.truongngo.moviedb.domain.model.HomeFeed
 import com.truongngo.moviedb.domain.model.HomeLoadMode
+import com.truongngo.moviedb.domain.model.MovieLoadError
 import com.truongngo.moviedb.domain.model.MovieLoadResult
 import com.truongngo.moviedb.domain.repository.MovieRepository
 import kotlinx.coroutines.CancellationException

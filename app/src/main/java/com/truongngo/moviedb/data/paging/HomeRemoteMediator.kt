@@ -5,7 +5,7 @@ import com.truongngo.moviedb.data.local.database.dao.HomePagingDao
 import com.truongngo.moviedb.data.local.model.HomeCacheKey
 import com.truongngo.moviedb.data.local.model.HomeFeedMovieEntity
 import com.truongngo.moviedb.data.network.ApiClients
-import com.truongngo.moviedb.data.network.NetworkException
+import com.truongngo.moviedb.data.network.NetworkErrorMapper
 import com.truongngo.moviedb.domain.model.HomeFeed
 import com.truongngo.moviedb.domain.model.MovieLoadError
 import com.truongngo.moviedb.domain.model.MoviePagingException
@@ -14,7 +14,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
-import java.io.IOException
 
 @OptIn(ExperimentalPagingApi::class)
 class HomeRemoteMediator(
@@ -62,12 +61,7 @@ class HomeRemoteMediator(
             throw exception
         } catch (exception: Exception) {
             currentCoroutineContext().ensureActive()
-            val reason = when {
-                exception is NetworkException && exception.httpCode in listOf(401, 403) -> MovieLoadError.AUTHENTICATION
-                exception is NetworkException -> MovieLoadError.GENERAL
-                exception is IOException -> MovieLoadError.CONNECTION
-                else -> MovieLoadError.GENERAL
-            }
+            val reason = NetworkErrorMapper.toMovieLoadError(exception)
             MediatorResult.Error(MoviePagingException(reason))
         }
     }

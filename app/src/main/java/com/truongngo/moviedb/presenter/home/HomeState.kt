@@ -8,7 +8,7 @@ enum class MovieSection { POPULAR, TOP_RATED, UPCOMING }
 data class HomeSectionState(
     val movies: List<HomeMovie> = emptyList(),
     val isLoading: Boolean = true,
-    val error: HomeError? = null,
+    val error: MovieLoadError? = null,
 )
 
 data class HomeState(
@@ -16,6 +16,6 @@ data class HomeState(
     val isRefreshing: Boolean = false,
     val nowPlaying: List<HomeMovie> = emptyList(),
     val isNowPlayingLoading: Boolean = false,
-    val nowPlayingError: HomeError? = null,
+    val nowPlayingError: MovieLoadError? = null,
     val refreshVersion: Int = 0,
 )
