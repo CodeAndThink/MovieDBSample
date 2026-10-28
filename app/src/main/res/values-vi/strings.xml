@@ -29,11 +29,9 @@
     <string name="home_top_rated">Đánh giá cao</string>
     <string name="home_upcoming">Sắp chiếu</string>
     <string name="home_retry">Thử lại</string>
-    <string name="home_load_more">Xem thêm</string>
     <string name="home_loading">Đang tải phim…</string>
     <string name="home_empty">Chưa có phim nào.</string>
     <string name="home_end">Bạn đã xem hết phim trong danh sách này.</string>
-    <string name="home_swipe_more">Vuốt để xem thêm phim</string>
     <string name="home_error_connection">Không thể kết nối. Kiểm tra Internet rồi thử lại.</string>
     <string name="home_error_auth">Xác thực dịch vụ phim thất bại.</string>
     <string name="home_error_general">Không thể tải phim. Vui lòng thử lại.</string>
@@ -58,4 +56,7 @@
     <string name="movie_error_rate_limited">Có quá nhiều yêu cầu. Vui lòng đợi rồi thử lại.</string>
     <string name="movie_error_timeout">Yêu cầu quá thời gian chờ. Vui lòng thử lại.</string>
     <string name="movie_error_server">Dịch vụ phim tạm thời không khả dụng. Vui lòng thử lại sau.</string>
+    <string name="home_see_more">Xem thêm</string>
+    <string name="home_see_more_category">Xem thêm phim %1$s</string>
+    <string name="movie_list_title">Danh sách phim</string>
 </resources>

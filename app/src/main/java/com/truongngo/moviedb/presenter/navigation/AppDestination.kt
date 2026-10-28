@@ -1,5 +1,7 @@
 package com.truongngo.moviedb.presenter.navigation
 
+import com.truongngo.moviedb.domain.model.HomeFeed
+
 /** Typed routes; detail always carries a validated movie ID. */
 sealed class AppDestination(val requiresAuthentication: Boolean) {
     data object LOGIN : AppDestination(false)
@@ -7,6 +9,9 @@ sealed class AppDestination(val requiresAuthentication: Boolean) {
     data object SEARCH : AppDestination(true)
     data object HOME : AppDestination(true)
     data object SETTINGS : AppDestination(true)
+    data class MovieList(val feed: HomeFeed) : AppDestination(true) {
+        init { require(feed != HomeFeed.NOW_PLAYING) }
+    }
     data class Detail(val movieId: Int) : AppDestination(true) {
         init { require(movieId > 0) }
     }
@@ -17,6 +22,7 @@ sealed class AppDestination(val requiresAuthentication: Boolean) {
         SEARCH -> "SEARCH"
         HOME -> "HOME"
         SETTINGS -> "SETTINGS"
+        is MovieList -> "MOVIES:${feed.name}"
         is Detail -> "DETAIL:$movieId"
     }
 
@@ -28,8 +34,11 @@ sealed class AppDestination(val requiresAuthentication: Boolean) {
             "HOME" -> HOME
             "SETTINGS" -> SETTINGS
             else -> {
-                require(value.startsWith("DETAIL:")) { "Unknown route" }
-                Detail(value.removePrefix("DETAIL:").toInt())
+                when {
+                    value.startsWith("MOVIES:") -> MovieList(HomeFeed.valueOf(value.removePrefix("MOVIES:")))
+                    value.startsWith("DETAIL:") -> Detail(value.removePrefix("DETAIL:").toInt())
+                    else -> error("Unknown route")
+                }
             }
         }
     }

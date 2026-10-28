@@ -5,20 +5,17 @@ import com.truongngo.moviedb.domain.model.MovieLoadError
 
 enum class MovieSection { POPULAR, TOP_RATED, UPCOMING }
 
-data class MovieSectionState(
+data class HomeSectionState(
     val movies: List<HomeMovie> = emptyList(),
-    val page: Int = 0,
-    val canLoadMore: Boolean = true,
-    val isLoading: Boolean = false,
-    val error: MovieLoadError? = null,
-    val retryPage: Int? = null,
+    val isLoading: Boolean = true,
+    val error: HomeError? = null,
 )
 
 data class HomeState(
+    val sections: Map<MovieSection, HomeSectionState> = MovieSection.entries.associateWith { HomeSectionState() },
     val isRefreshing: Boolean = false,
     val nowPlaying: List<HomeMovie> = emptyList(),
     val isNowPlayingLoading: Boolean = false,
-    val nowPlayingError: MovieLoadError? = null,
-    val sections: Map<MovieSection, MovieSectionState> = MovieSection.entries.associateWith { MovieSectionState() },
+    val nowPlayingError: HomeError? = null,
     val refreshVersion: Int = 0,
 )

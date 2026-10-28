@@ -27,6 +27,9 @@ class DeepLinkService @Inject constructor() {
             "/settings" -> AppDestination.SETTINGS
             "/login" -> AppDestination.LOGIN
             "/signup" -> AppDestination.SIGNUP
+            "/movies/popular" -> AppDestination.MovieList(com.truongngo.moviedb.domain.model.HomeFeed.POPULAR)
+            "/movies/top_rated" -> AppDestination.MovieList(com.truongngo.moviedb.domain.model.HomeFeed.TOP_RATED)
+            "/movies/upcoming" -> AppDestination.MovieList(com.truongngo.moviedb.domain.model.HomeFeed.UPCOMING)
             else -> {
                 val id = Regex("/detail/([1-9][0-9]*)").matchEntire(uri.rawPath.orEmpty())
                     ?.groupValues?.get(1)?.toIntOrNull()

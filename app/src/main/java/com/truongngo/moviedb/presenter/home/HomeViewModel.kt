@@ -1,10 +1,14 @@
 package com.truongngo.moviedb.presenter.home
 
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.catch
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.truongngo.moviedb.domain.model.HomeFeed
 import com.truongngo.moviedb.domain.model.HomeLoadMode
 import com.truongngo.moviedb.domain.model.HomeMoviePage
+import com.truongngo.moviedb.domain.model.MovieLoadError
 import com.truongngo.moviedb.domain.model.MovieLoadResult
 import com.truongngo.moviedb.domain.usecase.LoadHomeMoviesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,21 +30,39 @@ class HomeViewModel @Inject constructor(private val loadHomeMovies: LoadHomeMovi
     val effectFlow = effects.receiveAsFlow()
     private var generation = 0
     private var refreshJob: Job? = null
-    private val pageJobs = mutableMapOf<MovieSection, Job>()
     private var bannerJob: Job? = null
+    private val sectionJobs = mutableMapOf<MovieSection, Job>()
+    private val observationJobs = mutableMapOf<MovieSection, Job>()
+    private val observationErrors = mutableSetOf<MovieSection>()
 
     init {
+        MovieSection.entries.forEach(::observeSection)
         refresh(useCache = true)
+    }
+
+    private fun observeSection(section: MovieSection) {
+        observationJobs[section]?.cancel()
+        observationErrors.remove(section)
+        observationJobs[section] = viewModelScope.launch {
+            loadHomeMovies.preview(HomeFeed.valueOf(section.name))
+                .catch { error ->
+                    if (error is CancellationException) throw error
+                    observationErrors.add(section)
+                    updateSection(section) { it.copy(error = HomeError.GENERAL, isLoading = false) }
+                }.collect { movies ->
+                    updateSection(section) { it.copy(movies = movies.distinctBy { movie -> movie.id }.take(10)) }
+                }
+        }
     }
 
     fun onEvent(event: HomeEvent) {
         when (event) {
+            is HomeEvent.SeeMoreClicked -> effects.trySend(HomeEffect.NavigateMovieList(HomeFeed.valueOf(event.section.name)))
+            is HomeEvent.RetrySection -> retrySection(event.section)
             HomeEvent.SearchClicked -> effects.trySend(HomeEffect.NavigateSearch)
             is HomeEvent.MovieClicked -> if (event.movieId > 0) { effects.trySend(HomeEffect.NavigateDetail(event.movieId)) }
             HomeEvent.Refresh -> refresh()
             HomeEvent.RetryNowPlaying -> retryNowPlaying()
-            is HomeEvent.LoadMore -> loadMore(event.section, retry = false)
-            is HomeEvent.RetrySection -> loadMore(event.section, retry = true)
         }
     }
 
@@ -49,23 +71,37 @@ class HomeViewModel @Inject constructor(private val loadHomeMovies: LoadHomeMovi
         val currentGeneration = ++generation
         refreshJob?.cancel()
         bannerJob?.cancel()
-        pageJobs.values.forEach { it.cancel() }
-        pageJobs.clear()
-        _stateFlow.update { state ->
-            state.copy(isRefreshing = true, isNowPlayingLoading = true, nowPlayingError = null,
-                sections = state.sections.mapValues { (_, section) -> section.copy(isLoading = true, error = null) })
-        }
+        sectionJobs.values.forEach { it.cancel() }
+        sectionJobs.clear()
+        observationErrors.toList().forEach(::observeSection)
+        MovieSection.entries.forEach { section -> updateSection(section) { it.copy(isLoading = true, error = null) } }
+        _stateFlow.update { it.copy(isRefreshing = true, isNowPlayingLoading = true, nowPlayingError = null) }
         refreshJob = viewModelScope.launch {
             coroutineScope {
                 launch { fetchNowPlaying(currentGeneration, useCache) }
-                MovieSection.entries.forEach { section ->
-                    launch { fetchSection(section, page = 1, currentGeneration, useCache) }
-                }
+                MovieSection.entries.forEach { section -> launch { fetchSection(section, currentGeneration, !useCache) } }
             }
             if (generation == currentGeneration) {
                 _stateFlow.update { it.copy(isRefreshing = false, refreshVersion = it.refreshVersion + 1) }
             }
         }
+    }
+
+    private fun retrySection(section: MovieSection) {
+        if (_stateFlow.value.isRefreshing || _stateFlow.value.sections.getValue(section).isLoading) return
+        updateSection(section) { it.copy(isLoading = true, error = null) }
+        if (section in observationErrors) observeSection(section)
+        val currentGeneration = generation
+        sectionJobs[section] = viewModelScope.launch { fetchSection(section, currentGeneration, true) }
+    }
+
+    private suspend fun fetchSection(section: MovieSection, currentGeneration: Int, force: Boolean) {
+        val error = loadHomeMovies.refreshPreview(HomeFeed.valueOf(section.name), force)
+        if (generation == currentGeneration) updateSection(section) { it.copy(isLoading = false, error = error?.toHomeError() ?: if (section in observationErrors) HomeError.GENERAL else null) }
+    }
+
+    private fun updateSection(section: MovieSection, transform: (HomeSectionState) -> HomeSectionState) {
+        _stateFlow.update { it.copy(sections = it.sections + (section to transform(it.sections.getValue(section)))) }
     }
 
     private fun retryNowPlaying() {
@@ -90,53 +126,12 @@ class HomeViewModel @Inject constructor(private val loadHomeMovies: LoadHomeMovi
         }
     }
 
-    private fun loadMore(section: MovieSection, retry: Boolean) {
-        val state = _stateFlow.value
-        val list = state.sections.getValue(section)
-        if (state.isRefreshing || list.isLoading || (!list.canLoadMore && list.error == null)) return
-        if (list.error != null && !retry) return
-        val currentGeneration = generation
-        updateSection(section) { it.copy(isLoading = true, error = null) }
-        pageJobs[section] = viewModelScope.launch {
-            fetchSection(section, list.retryPage ?: (list.page + 1), currentGeneration)
-        }
-    }
-
-    private suspend fun fetchSection(section: MovieSection, page: Int, currentGeneration: Int, useCache: Boolean = false) {
-        val feed = when (section) {
-            MovieSection.POPULAR -> HomeFeed.POPULAR
-            MovieSection.TOP_RATED -> HomeFeed.TOP_RATED
-            MovieSection.UPCOMING -> HomeFeed.UPCOMING
-        }
-        loadHomeMovies(feed, page, loadMode(useCache)).collect { result ->
-            if (generation != currentGeneration) return@collect
-            when (result) {
-                is MovieLoadResult.Data -> applyPage(section, result.page, loading = result.isRefreshing)
-                is MovieLoadResult.Error -> updateSection(section) {
-                    // Keep content and retry the requested page, including failed page-one refreshes.
-                    it.copy(isLoading = false, error = result.reason, retryPage = page)
-                }
-            }
-        }
-    }
-
     private fun loadMode(useCache: Boolean) =
         if (useCache) HomeLoadMode.CACHE_FIRST else HomeLoadMode.FORCE_REFRESH
 
-    private fun applyPage(section: MovieSection, response: HomeMoviePage, loading: Boolean = false) {
-        updateSection(section) { previous ->
-            previous.copy(
-                movies = ((if (response.page == 1) emptyList() else previous.movies) + response.results).distinctBy { it.id },
-                page = response.page,
-                canLoadMore = response.results.isNotEmpty() && response.page < minOf(response.totalPages, 500),
-                isLoading = loading,
-                error = null,
-                retryPage = null,
-            )
-        }
-    }
-
-    private fun updateSection(section: MovieSection, transform: (MovieSectionState) -> MovieSectionState) {
-        _stateFlow.update { it.copy(sections = it.sections + (section to transform(it.sections.getValue(section)))) }
+    private fun MovieLoadError.toHomeError(): HomeError = when (this) {
+        MovieLoadError.AUTHENTICATION -> HomeError.AUTHENTICATION
+        MovieLoadError.CONNECTION -> HomeError.CONNECTION
+        MovieLoadError.GENERAL -> HomeError.GENERAL
     }
 }

@@ -25,6 +25,20 @@ class NavigationViewModelTest {
         state, DeepLinkService(), session
     )
 
+    @Test fun movieListRequiresLoginAndResumesTheSelectedFeed() {
+        val saved = SavedStateHandle()
+        val vm = model(saved)
+        vm.handleLink("moviedb://app/movies/top_rated")
+        assertEquals("LOGIN", vm.command.value)
+        vm.consumed("LOGIN")
+        val restored = model(SavedStateHandle(saved.keys().associateWith { saved.get<Any?>(it) }))
+        session.signedIn = true
+        restored.authenticated()
+        assertEquals("MOVIES:TOP_RATED", restored.command.value)
+        restored.logout()
+        assertEquals("RESET_LOGIN", restored.command.value)
+    }
+
     @Test fun consolePushSurvivesColdStartAndRotationThenResumesAfterLogin() {
         val parser = com.truongngo.moviedb.presenter.notification.PushNotificationParser(DeepLinkService())
         val state = SavedStateHandle()

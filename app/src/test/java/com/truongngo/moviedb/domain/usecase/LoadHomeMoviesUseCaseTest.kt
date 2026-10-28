@@ -10,6 +10,9 @@ class LoadHomeMoviesUseCaseTest {
     @Test fun invalidPagesAreRejectedBeforeStartingDataWork() {
         var calls = 0
         val repository = object : MovieRepository {
+            override fun observeHomePreview(feed: HomeFeed) = flowOf(emptyList<HomeMovie>())
+            override suspend fun refreshHomePreview(feed: HomeFeed, force: Boolean): MovieLoadError? = null
+            override fun pagedHomeMovies(feed: HomeFeed) = flowOf(androidx.paging.PagingData.empty<HomeMovie>())
             override fun loadHomeMovies(feed: HomeFeed, page: Int, mode: HomeLoadMode) =
                 flowOf<MovieLoadResult>(MovieLoadResult.Data(HomeMoviePage(page, emptyList(), 1, 0))).also { calls++ }
         }

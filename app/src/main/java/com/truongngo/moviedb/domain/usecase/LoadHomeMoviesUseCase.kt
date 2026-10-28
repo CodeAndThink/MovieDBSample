@@ -8,6 +8,11 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class LoadHomeMoviesUseCase @Inject constructor(private val repository: MovieRepository) {
+    fun preview(feed: HomeFeed) = repository.observeHomePreview(feed)
+    suspend fun refreshPreview(feed: HomeFeed, force: Boolean) = repository.refreshHomePreview(feed, force)
+
+    fun paged(feed: HomeFeed) = repository.pagedHomeMovies(feed)
+
     operator fun invoke(feed: HomeFeed, page: Int = 1, mode: HomeLoadMode = HomeLoadMode.CACHE_FIRST): Flow<MovieLoadResult> {
         require(page in 1..500) { "Movie page must be between 1 and 500" }
         return repository.loadHomeMovies(feed, page, mode)

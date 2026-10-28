@@ -16,7 +16,13 @@ import androidx.viewpager2.widget.ViewPager2
 import com.truongngo.moviedb.presenter.home.HomeFragment
 import com.truongngo.moviedb.presenter.home.HomeState
 import com.truongngo.moviedb.presenter.home.HomeViewModel
-import com.truongngo.moviedb.presenter.home.MovieSection
+import android.view.View
+import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import androidx.recyclerview.widget.ConcatAdapter
+import com.truongngo.moviedb.presenter.home.HomeMovieAdapter
+import com.truongngo.moviedb.presenter.home.HomeSeeMoreAdapter
 import com.truongngo.moviedb.presenter.navigation.AppDestination
 import org.junit.Assert.*
 import org.junit.Test
@@ -39,23 +45,33 @@ class HomeInstrumentedTest {
             scenario.onActivity { it.navigator.navigate(AppDestination.HOME) }
             instrumentation.waitForIdleSync()
             var state = HomeState(isRefreshing = true)
+            var refreshing = true
             val deadline = SystemClock.elapsedRealtime() + 40_000
-            while (state.isRefreshing && SystemClock.elapsedRealtime() < deadline) {
-                scenario.onActivity { state = ViewModelProvider(home(it).findNavController().getBackStackEntry(R.id.main_navigation))[HomeViewModel::class.java].stateFlow.value }
+            while (refreshing && SystemClock.elapsedRealtime() < deadline) {
+                scenario.onActivity {
+                    val fragment = home(it)
+                    state = ViewModelProvider(fragment.findNavController().getBackStackEntry(R.id.main_navigation))[HomeViewModel::class.java].stateFlow.value
+                    refreshing = fragment.requireView().findViewById<SwipeRefreshLayout>(R.id.refresh).isRefreshing
+                }
                 SystemClock.sleep(100)
             }
-            assertFalse("Requests should complete or expose an error", state.isRefreshing)
+            assertFalse("Banner and feed refreshes should complete or expose an error", refreshing)
             scenario.onActivity { activity ->
                 val fragment = home(activity)
                 val pager = fragment.requireView().findViewById<ViewPager2>(R.id.nowPlayingPager)
                 assertTrue(state.nowPlaying.size <= 10)
                 assertEquals(if (state.nowPlaying.size > 1) state.nowPlaying.size + 2 else state.nowPlaying.size,
                     pager.adapter!!.itemCount)
-                MovieSection.entries.forEach { section ->
-                    val list = state.sections.getValue(section)
-                    assertFalse(list.isLoading)
-                    assertTrue(list.page == 1 || list.error != null)
+                listOf(R.id.popular, R.id.topRated, R.id.upcoming).forEach { sectionId ->
+                    val section = fragment.requireView().findViewById<View>(sectionId)
+                    val adapters = (section.findViewById<RecyclerView>(R.id.movies).adapter as ConcatAdapter).adapters
+                    assertTrue(adapters.first() is HomeMovieAdapter)
+                    assertTrue(adapters.first().itemCount <= 10)
+                    assertTrue(adapters.last() is HomeSeeMoreAdapter)
+                    assertEquals(1, adapters.last().itemCount)
+                    assertTrue(section.findViewById<View>(R.id.seeMore).isShown)
                 }
+
             }
             if (state.nowPlaying.size > 1) {
                 scenario.onActivity {

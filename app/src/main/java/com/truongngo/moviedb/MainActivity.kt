@@ -77,7 +77,7 @@ class MainActivity : AppCompatActivity() {
         val onSplash = host.navController.currentDestination?.id == R.id.splash
         navigation.start(incomingLink(intent), savedInstanceState != null,
             onSplash = onSplash, waitForNotificationPermission = onSplash)
-        if (savedInstanceState != null && host.navController.currentDestination?.id in setOf(R.id.main_screen, R.id.detail, R.id.search)) {
+        if (savedInstanceState != null && host.navController.currentDestination?.id in setOf(R.id.main_screen, R.id.detail, R.id.search, R.id.movie_list)) {
             navigation.checkRestoredSession()
         }
         lifecycleScope.launch {

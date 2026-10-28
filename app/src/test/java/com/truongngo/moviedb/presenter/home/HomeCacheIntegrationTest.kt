@@ -32,79 +32,11 @@ class HomeCacheIntegrationTest {
     @Before fun setup() { Dispatchers.setMain(dispatcher) }
     @After fun teardown() { Dispatchers.resetMain() }
 
-    @Test fun freshCacheSkipsNetworkAndContinuesAtPageTwo() = runTest(dispatcher) {
-        cache.pages[HomeCacheKey("POPULAR")] = CachedHomePage(page(1, listOf(42)), System.currentTimeMillis())
-        val vm = HomeViewModel(LoadHomeMoviesUseCase(MovieRepositoryImpl(api, cache)))
-        runCurrent()
-        assertEquals(listOf(42), vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).movies.map { it.id })
-        assertTrue(api.popularCalls.isEmpty())
-        vm.onEvent(HomeEvent.LoadMore(MovieSection.POPULAR))
-        runCurrent()
-        assertEquals(listOf(2), api.popularCalls)
-        assertEquals(listOf(42), cache.pages.getValue(HomeCacheKey("POPULAR")).page.results.map { it.id })
-    }
-
-    @Test fun staleCacheIsVisibleWhileRefreshingAndSurvivesNetworkFailure() = runTest(dispatcher) {
-        cache.pages[HomeCacheKey("POPULAR")] = CachedHomePage(page(1, listOf(42)), 0)
-        val pending = CompletableDeferred<MoviePage>()
-        api.popular = { pending.await() }
-        val vm = HomeViewModel(LoadHomeMoviesUseCase(MovieRepositoryImpl(api, cache)))
-        runCurrent()
-        assertEquals(listOf(42), vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).movies.map { it.id })
-        assertTrue(vm.stateFlow.value.isRefreshing)
-        pending.completeExceptionally(IOException("offline"))
-        runCurrent()
-        assertEquals(listOf(42), vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).movies.map { it.id })
-        assertEquals(MovieLoadError.CONNECTION, vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).error)
-    }
-
-    @Test fun manualRefreshBypassesFreshCacheAndPersistsReplacement() = runTest(dispatcher) {
-        cache.pages[HomeCacheKey("POPULAR")] = CachedHomePage(page(1, listOf(42)), System.currentTimeMillis())
-        val vm = HomeViewModel(LoadHomeMoviesUseCase(MovieRepositoryImpl(api, cache)))
-        runCurrent()
-        vm.onEvent(HomeEvent.Refresh)
-        runCurrent()
-        assertEquals(listOf(1), api.popularCalls)
-        assertEquals(listOf(1, 2), cache.pages.getValue(HomeCacheKey("POPULAR")).page.results.map { it.id })
-    }
-
-    @Test fun cacheFailureDoesNotHideNetworkResults() = runTest(dispatcher) {
-        cache.fail = true
-        val vm = HomeViewModel(LoadHomeMoviesUseCase(MovieRepositoryImpl(api, cache)))
-        runCurrent()
-        assertEquals(listOf(1, 2), vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).movies.map { it.id })
-        assertNull(vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).error)
-        assertFalse(vm.stateFlow.value.isRefreshing)
-    }
-
-    @Test fun reopeningHomeUsesAllFourCachedFeedsIncludingBanner() = runTest(dispatcher) {
-        HomeViewModel(LoadHomeMoviesUseCase(MovieRepositoryImpl(api, cache)))
-        runCurrent()
-        assertEquals(setOf("POPULAR", "TOP_RATED", "UPCOMING", "NOW_PLAYING"), cache.pages.keys.map { it.feed }.toSet())
-        val calls = api.calls.toList()
-        val reopened = HomeViewModel(LoadHomeMoviesUseCase(MovieRepositoryImpl(api, cache)))
-        runCurrent()
-        assertEquals(calls, api.calls)
-        assertEquals(10, reopened.stateFlow.value.nowPlaying.size)
-        assertFalse(reopened.stateFlow.value.isNowPlayingLoading)
-        assertFalse(reopened.stateFlow.value.isRefreshing)
-    }
-
-    @Test fun freshEmptyCacheDoesNotRefetchOrAllowPagination() = runTest(dispatcher) {
-        cache.pages[HomeCacheKey("POPULAR")] = CachedHomePage(page(1, emptyList()), System.currentTimeMillis())
-        val vm = HomeViewModel(LoadHomeMoviesUseCase(MovieRepositoryImpl(api, cache)))
-        runCurrent()
-        vm.onEvent(HomeEvent.LoadMore(MovieSection.POPULAR))
-        runCurrent()
-        assertTrue(api.popularCalls.isEmpty())
-        assertFalse(vm.stateFlow.value.sections.getValue(MovieSection.POPULAR).canLoadMore)
-    }
-
     @Test fun staleBannerSurvivesErrorAndRetryReplacesItsCache() = runTest(dispatcher) {
         cache.pages[HomeCacheKey("NOW_PLAYING")] = CachedHomePage(page(1, listOf(42, 42) + (1..20).toList()), 0)
         val pending = CompletableDeferred<MoviePage>()
         api.nowPlaying = { pending.await() }
-        val vm = HomeViewModel(LoadHomeMoviesUseCase(MovieRepositoryImpl(api, cache)))
+        val vm = HomeViewModel(LoadHomeMoviesUseCase(MovieRepositoryImpl(api, cache, com.truongngo.moviedb.data.paging.MemoryPagingDao())))
         runCurrent()
         assertTrue(vm.stateFlow.value.isNowPlayingLoading)
         assertEquals(listOf(42) + (1..9).toList(), vm.stateFlow.value.nowPlaying.map { it.id })

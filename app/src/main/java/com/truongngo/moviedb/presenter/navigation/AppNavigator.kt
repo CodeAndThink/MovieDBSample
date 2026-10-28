@@ -44,11 +44,17 @@ class AppNavigator @Inject constructor() {
                     controller.navigate(R.id.search)
                 }
             }
+            is AppDestination.MovieList -> {
+                val current = controller.currentBackStackEntry
+                if (current?.destination?.id == R.id.movie_list && current.arguments?.getString("feed") == destination.feed.name) return
+                ensureMain()
+                controller.navigate(R.id.movie_list, bundleOf("feed" to destination.feed.name), navOptions { launchSingleTop = true })
+            }
             is AppDestination.Detail -> {
                 val current = controller.currentBackStackEntry
                 if (current?.destination?.id == R.id.detail && current.arguments?.getInt("movieId") == destination.movieId) return
                 if (controller.currentDestination?.id == R.id.detail) controller.popBackStack()
-                if (controller.currentDestination?.id !in setOf(R.id.main_screen, R.id.search)) ensureMain()
+                if (controller.currentDestination?.id !in setOf(R.id.main_screen, R.id.search, R.id.movie_list)) ensureMain()
                 controller.navigate(R.id.detail, bundleOf("movieId" to destination.movieId), navOptions {
                     launchSingleTop = true
                 })
